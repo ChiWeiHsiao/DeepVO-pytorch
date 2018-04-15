@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from params import *
 from torch.autograd import Variable
 from torch.nn.init import kaiming_normal
 import numpy as np
@@ -42,7 +43,6 @@ class DeepVO(nn.Module):
         # Comput the shape based on diff image size
         __tmp = Variable(torch.zeros(1, 6, imsize1, imsize2))
         __tmp = self.encode_image(__tmp)
-        print('\ntmp_size', __tmp.size())
 
 
         # RNN
@@ -58,13 +58,11 @@ class DeepVO(nn.Module):
         x = x.view(batch_size*seq_len, x.size(2), x.size(3), x.size(4))
         x = self.encode_image(x)
         flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))   # IMG_SIZE = (1280, 384), RNN_INPUT_SIZE = (1024, 20, 6)
-        print('flatten:', flatten.size())
         # RNN
         #h0 = Variable(torch.zeros(2, batch_size, 1000))
         #c0 = Variable(torch.zeros(2, batch_size, 1000))
         h_n, c_n = self.rnn(flatten)#, (h0, c0))
         out = self.linear(h_n)
-        print('out:', out.size())
         return out
 
     def encode_image(self, x):
@@ -81,3 +79,15 @@ class DeepVO(nn.Module):
 
     def bias_parameters(self):
         return [param for name, param in self.named_parameters() if 'bias' in name]
+
+    def train(self, x, y):
+        optimizer = torch.optim.Adagrad(self.parameters(), lr=params.lr)
+        optimizer.zero_grad()
+        predicted = self.forward(x)
+        loss = torch.nn.functional.mse_loss(predicted, y)
+        loss.backward()
+        optimizer.step()
+        return loss.data.numpy()[0]
+
+
+
