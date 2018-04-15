@@ -7,8 +7,6 @@ import torch
 from torch.autograd import Variable
 
 
-img_size = (1280, 384)  #(320, 96)
-
 save_path = '{},ep{},b{},lr{}'.format(
     params.solver,
     params.epochs,
@@ -29,7 +27,7 @@ else:
 ###############################################################
 # Use only conv-layer-part of FlowNet as CNN for DeepVO
 ###############################################################
-M_deepvo = DeepVO(img_size[0], img_size[1])#320, 96)
+M_deepvo = DeepVO(params.img_size[0], params.img_size[1])#320, 96)
 model_dict = M_deepvo.state_dict()
 update_dict = {k: v for k, v in pretrained_w['state_dict'].items() if k in model_dict}
 model_dict.update(update_dict)
@@ -40,6 +38,8 @@ if params.cuda:
 ###############################################################
 # Prepare Data
 ###############################################################
+params.img_size  # resize image to this size
+params.seq_len  # prepare sequence of frames
 
 
 
@@ -47,7 +47,7 @@ if params.cuda:
 # Train
 ###############################################################
 # toy data
-x = Variable(torch.randn(1, 3, 6, img_size[0], img_size[1]).type(torch.FloatTensor))  # bat, seq, cha, im1, im2
+x = Variable(torch.randn(1, 3, 6, params.img_size[0], paeaimg_size[1]).type(torch.FloatTensor))  # bat, seq, cha, im1, im2
 y = Variable(torch.randn(1, 3, 6).type(torch.FloatTensor))
 
 for i in range(params.epochs):
