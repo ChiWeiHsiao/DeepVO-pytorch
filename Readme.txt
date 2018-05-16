@@ -1,3 +1,5 @@
+# Readme
+## Usage
 - Run 'KITTI/downloader.sh' to download the KITTI visual odometry dataset and only keep the left camera color images (image_03 folder.)
 - Run 'preprocess.py' to 
     - remove unused images based on the readme file in KITTI devkit.
