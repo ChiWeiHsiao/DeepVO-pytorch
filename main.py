@@ -1,5 +1,6 @@
 from params import *
 from model import DeepVO
+from Dataloader_loss import *
 
 import numpy as np
 import time
@@ -33,6 +34,17 @@ model_dict.update(update_dict)
 M_deepvo.load_state_dict(model_dict)
 if params.cuda:
 	M_deepvo = M_deepvo.cuda()
+
+###############################################################
+# Prepare Data
+###############################################################
+#imgs = KITTI_Data(params.root_imgs,params.root_poses)
+#train_imgs = DataLoader(imgs,batch_size=params.batch_size,num_workers=5)
+
+###############################################################
+# Loss Function
+###############################################################
+#criterion = DeepvoLoss()
 
 
 # Prepare Data
