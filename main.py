@@ -1,3 +1,4 @@
+# %load main.py
 from params import *
 from model import DeepVO
 from Dataloader_loss import *
@@ -35,23 +36,28 @@ M_deepvo.load_state_dict(model_dict)
 if params.cuda:
 	M_deepvo = M_deepvo.cuda()
 
-###############################################################
-# Prepare Data
-###############################################################
-#imgs = KITTI_Data(params.root_imgs,params.root_poses)
-#train_imgs = DataLoader(imgs,batch_size=params.batch_size,num_workers=5)
-
-###############################################################
-# Loss Function
-###############################################################
-#criterion = DeepvoLoss()
-
-
 # Prepare Data
 params.img_size  # resize image to this size
 params.seq_len  # prepare sequence of frames
 seqs = ['01','04','06','07','09', '10']
 train_dl = create_data_loader(['_04'], batch_size=params.batch_size, seq_len_range=[3,5])
+
+###############################################################
+#     Prepare Data // By Yukun
+#Dataloader read images folder one by one and return dataloader
+#returned dataloader stores images address and will only read 
+#images when take batches.
+###############################################################
+'''
+seq_list = ['01']
+for seq in seq_list:
+    train_dl = DataLoader(seq_list,batch_size=params.batch_size,seq_len = params.seq_len,num_workers = 5) 
+    
+    #Custom loss function
+    criterion = DeepvoLoss()
+    #DEEPVO TRAINING PROCESS
+    
+'''
 
 
 for it, (batch_x, batch_y) in enumerate(train_dl):
@@ -68,4 +74,3 @@ x = Variable(torch.randn(1, 3, 6, params.img_size[0], params.img_size[1]).type(t
 #for i in range(params.epochs):
 #	ls = M_deepvo.train(x, y)
 #	print('loss:', ls)
-
