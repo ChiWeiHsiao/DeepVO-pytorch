@@ -51,7 +51,7 @@ train_dl = create_data_loader(['_04'], batch_size=params.batch_size, seq_len_ran
 '''
 seq_list = ['01']
 for seq in seq_list:
-    train_dl = DataLoader(seq_list,batch_size=params.batch_size,seq_len = params.seq_len,num_workers = 5) 
+    train_dl = DataLoader(,batch_size=params.batch_size,seq_len = params.seq_len,num_workers = 5) 
     
     #Custom loss function
     criterion = DeepvoLoss()

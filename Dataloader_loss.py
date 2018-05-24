@@ -58,11 +58,10 @@ def rotationMatrixToEulerAngles(R) :
 ###############################################################
 #DataLoader
 ###############################################################
-__all__ = ['KITTI_Data']
 
 #only fixed seq_len is used
 class KITTI_Data(Dataset):
-    def __init__(self,folder,batch_size,seq_len): 
+    def __init__(self,folder,seq_len): 
         
         #only store images address in dataloader 
         root_train = 'KITTI/images/{}/image_03/data'.format(folder)
@@ -72,7 +71,6 @@ class KITTI_Data(Dataset):
         self.GT = readGT('KITTI/pose_GT/{}.txt'.format(folder))
         
         self.seq_len = seq_len
-        self.batch_size = batch_size
 
     def __getitem__(self, index):
         #check index, CAUTION:the start/end of frames should be determined by GroundTruth file
