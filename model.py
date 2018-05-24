@@ -52,8 +52,7 @@ class DeepVO(nn.Module):
     def forward(self, x): 
         # x: (batch, seq_len, channel, width, height)
         # stack_image
-        x = torch.cat(( x[:-1], x[1:]), dim=2)
-        print('Stacked x:', x.size())
+        x = torch.cat(( x[:, :-1], x[:, 1:]), dim=2)
         batch_size = x.size(0)
         seq_len = x.size(1)
         
@@ -89,6 +88,5 @@ class DeepVO(nn.Module):
         loss.backward()
         optimizer.step()
         return loss.data  #.cpu().numpy()
-
 
 
