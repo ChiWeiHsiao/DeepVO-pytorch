@@ -27,7 +27,6 @@ def prepare_sequence_data(folder_list, batch_size, seq_len_range=[5,5], mode='si
 		x_one_video = []
 		# Read ground truth poses
 		poses = np.load('KITTI/pose_GT/{}.npy'.format(folder))
-		#y_0_t = poses[0][-3:]
 		# Read images and stack 2 images
 		fnames = glob.glob('KITTI/images/{}/image_03/data/*.png'.format(folder))  #unorderd
 		fnames = ['KITTI/images/{}/image_03/data/{:010d}.png'.format(folder, i) for i in range(len(fnames))]
@@ -128,6 +127,7 @@ if __name__=='__main__':
 			print('x.shape: ', x.shape)
 			X = x if X == [] else np.concatenate(X, x)
 			Y = y if Y == [] else np.concatenate(Y, y)
+			
 	print('=====================================')
 	print('Job is done in {} sec'.format(time.time()-start_t))
 	print('X.shape:', X.shape)

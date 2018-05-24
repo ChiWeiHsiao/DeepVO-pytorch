@@ -75,11 +75,7 @@ for seq in seq_list:
 '''
 
 
-for it, (batch_x, batch_y) in enumerate(train_dl):
-	print('Iteration %d' %it)
-	print('batch x size: ', batch_x.size())
-	print('batch y size: ', batch_y.size())
-	break
+
 
 # toy data
 #x = torch.randn(1, 3, 6, params.img_size[0], params.img_size[1]).type(torch.FloatTensor))  # b_size, seq_len, channels(3*2andn(1, 3, 6).type(torch.FloatTensor)

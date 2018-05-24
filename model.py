@@ -62,8 +62,6 @@ class DeepVO(nn.Module):
         x = self.encode_image(x)
         flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))
         # RNN
-        #h0 = Variable(torch.zeros(2, batch_size, params.rnn_hidden_size))
-        #c0 = Variable(torch.zeros(2, batch_size, params.rnn_hidden_size))
         h_n, c_n = self.rnn(flatten)
         out = self.linear(h_n)
         return out
