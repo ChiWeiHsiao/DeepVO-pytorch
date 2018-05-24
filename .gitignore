@@ -1,1 +1,3 @@
-/KITTI/images/
+/KITTI/
+pose.m
+*.png

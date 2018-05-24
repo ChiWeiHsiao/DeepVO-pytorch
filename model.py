@@ -44,24 +44,27 @@ class DeepVO(nn.Module):
         __tmp = Variable(torch.zeros(1, 6, imsize1, imsize2))
         __tmp = self.encode_image(__tmp)
 
-
         # RNN
-        #self.rnn = nn.LSTM(input_size=1024*20*6, hidden_size=1000, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
-        self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), hidden_size=1000, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
-        self.linear = nn.Linear(in_features=1000, out_features=6)
+        #self.rnn = nn.LSTM(input_size=1024*20*6, hidden_size=params.rnn_hidden_size, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
+        self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), hidden_size=params.rnn_hidden_size, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
+        self.linear = nn.Linear(in_features=params.rnn_hidden_size, out_features=6)
 
-
-    def forward(self, x):
-        # CNN
+    def forward(self, x): 
+        # x: (batch, seq_len, channel, width, height)
+        # stack_image
+        x = torch.cat(( x[:-1], x[1:]), dim=2)
+        print('Stacked x:', x.size())
         batch_size = x.size(0)
         seq_len = x.size(1)
+        
+        # CNN
         x = x.view(batch_size*seq_len, x.size(2), x.size(3), x.size(4))
         x = self.encode_image(x)
-        flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))   # IMG_SIZE = (1280, 384), RNN_INPUT_SIZE = (1024, 20, 6)
+        flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))
         # RNN
-        #h0 = Variable(torch.zeros(2, batch_size, 1000))
-        #c0 = Variable(torch.zeros(2, batch_size, 1000))
-        h_n, c_n = self.rnn(flatten)#, (h0, c0))
+        #h0 = Variable(torch.zeros(2, batch_size, params.rnn_hidden_size))
+        #c0 = Variable(torch.zeros(2, batch_size, params.rnn_hidden_size))
+        h_n, c_n = self.rnn(flatten)
         out = self.linear(h_n)
         return out
 
@@ -80,14 +83,14 @@ class DeepVO(nn.Module):
     def bias_parameters(self):
         return [param for name, param in self.named_parameters() if 'bias' in name]
 
-    def train(self, x, y):
-        optimizer = torch.optim.Adagrad(self.parameters(), lr=params.lr)
+    def step(self, x, y, optimizer):
         optimizer.zero_grad()
         predicted = self.forward(x)
+        y = y[:, 1:, :]# (batch, seq, dim_pose)
         loss = torch.nn.functional.mse_loss(predicted, y)
         loss.backward()
         optimizer.step()
-        return loss.data.numpy()[0]
+        return loss.data  #.cpu().numpy()
 
 
 

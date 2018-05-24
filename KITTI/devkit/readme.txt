@@ -101,7 +101,8 @@ method. Each file xx.txt contains a N x 12 table, where N is the number of
 frames of this sequence. Row i represents the i'th pose of the left camera
 coordinate system (i.e., z pointing forwards) via a 3x4 transformation
 matrix. The matrices are stored in row aligned order (the first entries
-correspond to the first row), and take a point in the i'th coordinate
+correspond to the first row), 
+and take a point in the i'th coordinate
 system and project it into the first (=0th) coordinate system. Hence, the
 translational part (3x1 vector of column 4) corresponds to the pose of the
 left camera coordinate system in the i'th frame with respect to the first
