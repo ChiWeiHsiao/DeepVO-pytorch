@@ -1,5 +1,5 @@
+# %load Dataloader_loss.py
 
-# coding: utf-8
 
 # In[ ]:
 
@@ -14,11 +14,9 @@ import time
 import torch
 
 import os
-from PIL import Image
 from torch.autograd import Variable
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-import torchvision as tv
 from torch.nn.modules import loss
 from torch import functional as F
 
@@ -60,25 +58,32 @@ def rotationMatrixToEulerAngles(R) :
 ###############################################################
 #DataLoader
 ###############################################################
+
+#only fixed seq_len is used
 class KITTI_Data(Dataset):
-    def __init__(self, root_train,root_gt):
+    def __init__(self,folder,seq_len): 
+        
+        #only store images address in dataloader 
+        root_train = 'KITTI/images/{}/image_03/data'.format(folder)
         imgs = os.listdir(root_train)
         self.imgs = [os.path.join(root_train,img) for img in imgs]
         self.imgs.sort()
-        self.GT = readGT(root_gt)
+        self.GT = readGT('KITTI/pose_GT/{}.txt'.format(folder))
+        
+        self.seq_len = seq_len
 
     def __getitem__(self, index):
         #check index, CAUTION:the start/end of frames should be determined by GroundTruth file
         try:
         #Check the boundary, the lower boundary = frames-(seqs-1)-#StackNum
-            self.GT[index+params.seq_len]
+            self.GT[index+self.seq_len]
         except Exception:
             print("Error:Index OutofRange")
         filenames = []
         
         #load path to images,read image and resemble as RGB
         #NumofImgs = seqs + #StackNum
-        filenames = [self.imgs[index+i] for i in range(params.seq_len+1)]
+        filenames = [self.imgs[index+i] for i in range(self.seq_len+1)]
         images = [np.asarray(cv2.imread(img),dtype=np.float32) for img in filenames]
 
         #resemble images as RGB
@@ -89,10 +94,7 @@ class KITTI_Data(Dataset):
         images = [torch.from_numpy(img) for img in images]
         
         #stack per 2 images
-        img = []
-        for k in range(len(images)-1):
-             img.append(np.concatenate((images[k],images[k+1]),axis = 0))
-        images = img
+        images = [np.concatenate((images[k],images[k+1]),axis = 0) for k in range(len(images)-1)]
                 
         
         #prepare ground truth poses data
@@ -102,11 +104,8 @@ class KITTI_Data(Dataset):
 
     def __len__(self):
         return self.GT.shape[0]-1-params.seq_len-1
-    
-    #def imgdata():
-     #   return cv.imread(self.imgs)
 
-
+#read groundtruth and return np.array
 def readGT(root):
     with open(root, 'r') as posefile:
         #read ground truth
@@ -130,4 +129,3 @@ class DeepvoLoss(loss._Loss):
 
     def forward(self, input,target):
         return F.mse_loss(input[0:3], target[0:3], size_average=self.size_average, reduce=self.reduce)+100 * F.mse_loss(input[3:6], target[3:6], size_average=self.size_average, reduce=self.reduce)
-

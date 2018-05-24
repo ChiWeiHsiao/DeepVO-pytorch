@@ -1,3 +1,4 @@
+# %load main.py
 from params import *
 from model import DeepVO
 #from Dataloader_loss import *
@@ -55,6 +56,23 @@ train_dl = Data.DataLoader(
     batch_size=params.batch_size,
     shuffle=True,
 )
+
+###############################################################
+#     Prepare Data // By Yukun
+#Dataloader read images folder one by one and return dataloader
+#returned dataloader stores images address and will only read 
+#images when take batches.
+###############################################################
+'''
+seq_list = ['01']
+for seq in seq_list:
+    train_dl = DataLoader(,batch_size=params.batch_size,seq_len = params.seq_len,num_workers = 5) 
+    
+    #Custom loss function
+    criterion = DeepvoLoss()
+    #DEEPVO TRAINING PROCESS
+    
+'''
 
 
 for it, (batch_x, batch_y) in enumerate(train_dl):
