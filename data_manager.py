@@ -50,7 +50,7 @@ def prepare_sequence_data(folder_list, batch_size, seq_len_range=[5,5], mode='si
 				n_frames = n_frames - res
 			x_segments = [x_one_video[i:i+seq_len] for i in range(0, n_frames, seq_len)]
 			x_segments = np.array(x_segments)
-			y_segments = [poses[i:i+seq_len] for i in range(0, n_frames, seq_len)]
+			y_segments = [poses[i:i+seq_len]-np.pad(poses[i][:3], (0, 3), 'constant') for i in range(0, n_frames, seq_len)]
 			X = x_segments if video_id == 0 else np.concatenate((X, x_segments), axis=0)
 			Y += y_segments
 		# Random segment to sequences with diff lengths
@@ -66,7 +66,7 @@ def prepare_sequence_data(folder_list, batch_size, seq_len_range=[5,5], mode='si
 					pad_x = np.expand_dims(pad_x, axis=0)
 					X = pad_x if  X == [] else np.concatenate((X, pad_x), axis=0)
 					pad_zero = np.zeros((max_len-n, 6))
-					pad_y = np.concatenate((poses[start:start+n], pad_zero))
+					pad_y = np.concatenate((poses[start:start+n]-np.pad(poses[start][:3], (0, 3), 'constant'), pad_zero))
 					Y.append(pad_y)
 				else:
 					print('Last %d frames is not used' %n)
@@ -80,23 +80,6 @@ def prepare_sequence_data(folder_list, batch_size, seq_len_range=[5,5], mode='si
 		return X, Y
 	elif mode == 'thread':
 		queue.put((X,Y))
-
-
-def segment_all_fnames(folder_list, batch_size, seq_len_range=[5,5], mode='single', queue=None):
-# Segment to 100 images per process
-	for video_id, folder in enumerate(folder_list):
-		print('processing %s'%folder, flush=True)
-		# for one seqence of frames, ex. 00
-		x_one_video = []
-		# Read ground truth poses
-		poses = np.load('KITTI/pose_GT/{}.npy'.format(folder))
-		# Segment file names into 100 files per seg
-		segment_filename = []
-		fnames = glob.glob('KITTI/images/{}/image_03/data/*.png'.format(folder))  #unorderd
-		fnames = ['KITTI/images/{}/image_03/data/{:010d}.png'.format(folder, i) for i in range(len(fnames))]
-		for file_id, fname in enumerate(fnames):
-			fname = 'KITTI/images/{}/image_03/data/{:010d}.png'.format(folder, file_id)
-
 
 
 if __name__=='__main__':
