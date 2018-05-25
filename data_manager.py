@@ -2,9 +2,11 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
 import torch
 import torch.utils.data as Data
 import time
+from params import *
 import psutil
 from sys import getsizeof
 
@@ -17,7 +19,7 @@ from queue import Queue
 __all__ = ['prepare_sequence_data']
 
 
-def prepare_sequence_data(folder_list, batch_size, seq_len_range=[5,5], mode='single', queue=None):
+def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', queue=None):
 	# Read in data
 	start_t = time.time()
 	X, Y = [], []
@@ -32,11 +34,13 @@ def prepare_sequence_data(folder_list, batch_size, seq_len_range=[5,5], mode='si
 		fnames = ['KITTI/images/{}/image_03/data/{:010d}.png'.format(folder, i) for i in range(len(fnames))]
 		for file_id, fname in enumerate(fnames):
 			fname = 'KITTI/images/{}/image_03/data/{:010d}.png'.format(folder, file_id)
-			im = plt.imread(fname)  #(370, 1226, 3)
-			im = np.rollaxis(im, 2, 0)  #(3, 370, 1226)
-			if im.shape != image_shape:
-				print('Debug: exist image with different shape in data: ', fname, im.shape)
-			im = np.expand_dims(im, axis=0)  #(1, 3, 370, 1226)
+			im = Image.open(fname)
+			if im.size != (params.img_w, params.img_h):
+				im = im.resize((params.img_w, params.img_h), Image.ANTIALIAS)
+			im = np.array(im)  # (h, w, c)
+			#im = plt.imread(fname)  #(h, w, c)
+			im = np.rollaxis(im, 2, 0)  #(c, h, w)
+			im = np.expand_dims(im, axis=0)  #(1, c, h, w)
 			x_one_video = im if x_one_video == [] else np.concatenate((x_one_video, im), axis=0)
 
 		n_frames = len(x_one_video)
@@ -84,19 +88,22 @@ def prepare_sequence_data(folder_list, batch_size, seq_len_range=[5,5], mode='si
 if __name__=='__main__':
 
 	mode = 'single'  # 'single' 'multiprocessing' 'thread'
-	folder_list = ['04', '07']
-	batch_size = 8
-	seq_len_range = [3,5]
+	save_name = 'KITTI/segmented_image/01_07'
+	folder_list = ['01', '07']
+	seq_len_range = params.seq_len
+	print('start {}'.format(mode), flush=True)
+	print('Seq Len: {}, Image size: {}, {}'.format(params.seq_len, params.img_w, params.img_h))
 
 	if mode == 'single':
-		folder = ['_04']
-		print('start {}'.format(mode), flush=True)
+		folder = ['09'] #['_04']
+		save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format(folder[0], 
+			seq_len_range[0], seq_len_range[1],
+			params.img_h, params.img_w)
 		start_t = time.time()
-		X, Y = prepare_sequence_data(folder, batch_size, seq_len_range, mode)
+		X, Y = prepare_sequence_data(folder, seq_len_range, mode)
 
 	elif mode == 'multiprocessing':
-		print('start {}, cpu:{}'.format(mode, mp.cpu_count()), flush=True)
-		args = [([folder], batch_size, seq_len_range, mode) for folder in folder_list]
+		args = [([folder], seq_len_range, mode) for folder in folder_list]
 		
 		N_CPU = 2
 		start_t = time.time()
@@ -109,14 +116,13 @@ if __name__=='__main__':
 			Y = y if Y == [] else np.concatenate(Y, y)
 
 	elif mode == 'thread':
-		print('start {}'.format(mode), flush=True)
 		start_t = time.time()
 		q = Queue()
 		print('threading.active_count(): ',threading.active_count(),flush=True)
 		print('threading.enumerate()\n', threading.enumerate(),flush=True)
 		threads = []
 		for f in folder_list:
-			t = threading.Thread(target=prepare_sequence_data, args=([f], batch_size, seq_len_range, mode, q))
+			t = threading.Thread(target=prepare_sequence_data, args=([f], seq_len_range, mode, q))
 			t.start()
 			threads.append(t)
 		for t in threads:
@@ -127,8 +133,12 @@ if __name__=='__main__':
 			print('x.shape: ', x.shape)
 			X = x if X == [] else np.concatenate(X, x)
 			Y = y if Y == [] else np.concatenate(Y, y)
-			
+
 	print('=====================================')
 	print('Job is done in {} sec'.format(time.time()-start_t))
 	print('X.shape:', X.shape)
 	print('Y.shape:', Y.shape)
+
+	if save_name != None:
+		np.savez(save_name, x=X, y=Y)
+
