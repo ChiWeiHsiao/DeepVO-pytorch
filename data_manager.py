@@ -53,7 +53,7 @@ def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', queue
 				n_frames = n_frames - res
 			x_segments = [x_one_video[i:i+seq_len] for i in range(0, n_frames, seq_len)]
 			x_segments = np.array(x_segments)
-			y_segments = [poses[i:i+seq_len]-np.pad(poses[i][:3], (0, 3), 'constant') for i in range(0, n_frames, seq_len)]
+			y_segments = [poses[i:i+seq_len] for i in range(0, n_frames, seq_len)]
 			X = x_segments if video_id == 0 else np.concatenate((X, x_segments), axis=0)
 			Y += y_segments
 		# Random segment to sequences with diff lengths
@@ -69,7 +69,7 @@ def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', queue
 					pad_x = np.expand_dims(pad_x, axis=0)
 					X = pad_x if  X == [] else np.concatenate((X, pad_x), axis=0)
 					pad_zero = np.zeros((max_len-n, 6))
-					pad_y = np.concatenate((poses[start:start+n]-np.pad(poses[start][:3], (0, 3), 'constant'), pad_zero))
+					pad_y = np.concatenate((poses[start:start+n], pad_zero))
 					Y.append(pad_y)
 				else:
 					print('Last %d frames is not used' %n)
