@@ -31,7 +31,7 @@ else:
 	pretrained_w = None
 
 
-M_deepvo = DeepVO(params.img_size[0], params.img_size[1])#320, 96)
+M_deepvo = DeepVO(params.img_h, params.img_w)#320, 96)
 
 
 # Use only conv-layer-part of FlowNet as CNN for DeepVO
@@ -44,11 +44,27 @@ if use_cuda:
     M_deepvo.cuda()
 
 # Prepare Data
-params.img_size  # resize image to this size
-params.seq_len  # prepare sequence of frames
-seqs = ['01','04','06','07','09', '10']
-X, Y = prepare_sequence_data(['_04'], params.batch_size, [10,10], 'single')
-X, Y = torch.from_numpy(X), torch.from_numpy(Y)
+#X, Y = prepare_sequence_data(['07'], params.seq_len, 'single')
+start_t = time.time()
+if len(params.load_data) == 1:
+	data = np.load(params.load_data[0])
+	X, Y = data['x'], data['y']
+	print('X: {}, Y: {}'.format(X.shape, Y.shape))
+	X, Y = torch.from_numpy(X), torch.from_numpy(Y)
+	X = X.type(torch.FloatTensor)  # 0-255 is originally torch.uint8
+elif len(params.load_data) > 1:
+	X, Y = [], []
+	for i, d in enumerate(params.load_data):
+		data = np.load(d)
+		x, y = data['x'], data['y']
+		print('{}: x: {}, y: {}'.format(d, x.shape, y.shape))
+		x, y = torch.from_numpy(x), torch.from_numpy(y)
+		x = x.type(torch.FloatTensor)  # 0-255 is originally torch.uint8
+		X = x if i == 0 else torch.cat((X, x), dim=0)
+		Y = y if i == 0 else torch.cat((Y, y), dim=0)
+print('max in tensor X:', X.max())
+print('X: {}, Y: {}'.format(X.shape, Y.shape))
+print('Load data use {} sec'.format(time.time()-start_t))
 
 train_dataset = Data.TensorDataset(X, Y)
 train_dl = Data.DataLoader(
@@ -78,19 +94,58 @@ for seq in seq_list:
 
 
 # toy data
-#x = torch.randn(1, 3, 6, params.img_size[0], params.img_size[1]).type(torch.FloatTensor))  # b_size, seq_len, channels(3*2andn(1, 3, 6).type(torch.FloatTensor)
+#x = torch.randn(1, 3, 6, params.img_h, params.img_w).type(torch.FloatTensor))  # b_size, seq_len, channels(3*2andn(1, 3, 6).type(torch.FloatTensor)
 
 # Train
 optimizer = torch.optim.Adagrad(M_deepvo.parameters(), lr=params.lr)
 M_deepvo.train()
+
+record_name = params.record_name
+save_model_name = params.save_model_name
+print('Record loss in: ', record_name)
+print('Save model in: ', save_model_name)
+min_loss = 1e9
+
 for ep in range(params.epochs):
-	print('============ Epoch {} ====================='.format(ep))
+	loss_sum = 0
+	record_loss_list = []
+	f = open(record_name, 'w') if ep == 0 else open(record_name, 'a')
+	f.write('===== Epoch {} =====\n'.format(ep))
+	f.close()
+	
+	#print('============ Epoch {} ====================='.format(ep))
 	for it, (batch_x, batch_y) in enumerate(train_dl):
 		if use_cuda:
 			batch_y = batch_y.cuda(non_blocking=True)
 			batch_x = batch_x.cuda(non_blocking=True)
-		
 		# Train
 		ls = M_deepvo.step(batch_x, batch_y, optimizer)
-		ls = ls.cpu().numpy()
-		print('Iteration {}: loss = {}'.format(it, ls))
+		record_loss_list.append(ls)
+		'''
+		if it % 1 == 0:
+			ls = ls.cpu().numpy()
+			print('Iteration {}: loss = {}'.format(it, ls))
+
+			f = open(record_name, 'a')
+			f.write('{}\n'.format(ls))
+			f.close()
+			loss_sum += ls
+		'''
+	record_loss_list = [l.cpu().numpy() for l in record_loss_list]
+	for l in record_loss_list:
+		loss_sum += l
+	f = open(record_name, 'a')
+	f.write('{}'.format(record_loss_list))
+	f.write('===== Epoch {} sum of loss: {} =====\n'.format(ep, loss_sum))
+	f.close()
+	print('{}'.format(record_loss_list))
+	print('===== Epoch {} sum of loss: {} =====\n'.format(ep, loss_sum))
+
+	if loss_sum < min_loss:
+		min_loss = loss_sum
+		print('Save model at ep {}, loss sum = {}'.format(ep, loss_sum))
+		torch.save(M_deepvo.state_dict(), save_model_name)
+
+#torch.save(M_deepvo.state_dict(), save_model_name)
+
+
