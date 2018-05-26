@@ -64,11 +64,8 @@ def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', sampl
 				x_segments = [x_one_video[i:i+seq_len] for i in range(st, n_frames, seq_len)]
 				x_segments = np.array(x_segments)
 				y_segments = [poses[i:i+seq_len] for i in range(st, n_frames, seq_len)]
-				print('=======')
-				print('Debug: x_segments.shape', x_segments.shape)
 				Y += y_segments
 				X = x_segments if X == [] else np.concatenate((X, x_segments), axis=0)
-				print('Debug: X.shape', X.shape)
 				
 		# Random segment to sequences with diff lengths
 		else:
@@ -104,7 +101,7 @@ if __name__=='__main__':
 
 	sample_interval = 2  # None
 	mode = 'single'  # 'single' 'multiprocessing' 'thread'
-	folder_list = ['07']  # 01 07 09
+	folder_list = ['09']  # 01 07 09
 	seq_len_range = params.seq_len
 	save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format('_'.join(folder_list), seq_len_range[0], seq_len_range[1], params.img_h, params.img_w)
 	print('start {}'.format(mode), flush=True)
