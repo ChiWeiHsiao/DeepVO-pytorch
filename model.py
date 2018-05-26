@@ -85,9 +85,9 @@ class DeepVO(nn.Module):
         predicted = self.forward(x)
         y = y[:, 1:, :]# (batch, seq, dim_pose)
         # Weighted MSE Loss
-        pose_loss = torch.nn.functional.mse_loss(predicted[:,:,:3], y[:,:,:3])
-        angle_loss = torch.nn.functional.mse_loss(predicted[:,:,3:], y[:,:,3:])
-        loss = pose_loss + 100*angle_loss
+        angle_loss = torch.nn.functional.mse_loss(predicted[:,:,:3], y[:,:,:3])
+        translation_loss = torch.nn.functional.mse_loss(predicted[:,:,3:], y[:,:,3:])
+        loss = 100 * angle_loss + translation_loss
         loss.backward()
         optimizer.step()
         return loss.data  #.cpu().numpy()
