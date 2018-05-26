@@ -19,12 +19,14 @@ from queue import Queue
 __all__ = ['prepare_sequence_data']
 
 
-def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', queue=None):
+def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', sample_interval=None, queue=None):
 	# Read in data
-	start_t = time.time()
 	X, Y = [], []
+	start_t = time.time()
 	image_shape = (3, 370, 1226)
+
 	for video_id, folder in enumerate(folder_list):
+		t_load = time.time()
 		print('processing %s'%folder, flush=True)
 		x_one_video = []
 		# Read ground truth poses
@@ -43,21 +45,34 @@ def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', queue
 			im = np.expand_dims(im, axis=0)  #(1, c, h, w)
 			x_one_video = im if x_one_video == [] else np.concatenate((x_one_video, im), axis=0)
 
-		n_frames = len(x_one_video)
+		print('Load images of video {} in {}...'.format(video_id, time.time()-t_load))
+
 		# Fixed seq_len
 		if seq_len_range[0] == seq_len_range[1]:
-			seq_len = seq_len_range[0]
-			n_frames = len(x_one_video)
-			res = n_frames % seq_len
-			if res != 0:
-				n_frames = n_frames - res
-			x_segments = [x_one_video[i:i+seq_len] for i in range(0, n_frames, seq_len)]
-			x_segments = np.array(x_segments)
-			y_segments = [poses[i:i+seq_len] for i in range(0, n_frames, seq_len)]
-			X = x_segments if video_id == 0 else np.concatenate((X, x_segments), axis=0)
-			Y += y_segments
+			if sample_interval:
+				start_frames = list(range(0, seq_len_range[0], sample_interval))
+				print('Sample start from frame {}'.format(start_frames))
+			else:
+				start_frames = [0]
+
+			for st in start_frames:
+				seq_len = seq_len_range[0]
+				n_frames = len(x_one_video) - st
+				res = n_frames % seq_len
+				if res != 0:
+					n_frames = n_frames - res
+				x_segments = [x_one_video[i:i+seq_len] for i in range(st, n_frames, seq_len)]
+				x_segments = np.array(x_segments)
+				y_segments = [poses[i:i+seq_len] for i in range(st, n_frames, seq_len)]
+				print('=======')
+				print('Debug: x_segments.shape', x_segments.shape)
+				Y += y_segments
+				X = x_segments if X == [] else np.concatenate((X, x_segments), axis=0)
+				print('Debug: X.shape', X.shape)
+				
 		# Random segment to sequences with diff lengths
 		else:
+			n_frames = len(x_one_video)
 			min_len, max_len = seq_len_range[0], seq_len_range[1]
 			start = 0
 			while True:
@@ -87,23 +102,23 @@ def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', queue
 
 if __name__=='__main__':
 
+	sample_interval = 2  # None
 	mode = 'single'  # 'single' 'multiprocessing' 'thread'
-	save_name = 'KITTI/segmented_image/01_07'
-	folder_list = ['01', '07']
+	folder_list = ['07']  # 01 07 09
 	seq_len_range = params.seq_len
+	save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format('_'.join(folder_list), seq_len_range[0], seq_len_range[1], params.img_h, params.img_w)
 	print('start {}'.format(mode), flush=True)
 	print('Seq Len: {}, Image size: {}, {}'.format(params.seq_len, params.img_w, params.img_h))
 
-	if mode == 'single':
-		folder = ['09'] #['_04']
-		save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format(folder[0], 
+	if mode == 'single': 
+		save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format(folder_list[0], 
 			seq_len_range[0], seq_len_range[1],
 			params.img_h, params.img_w)
 		start_t = time.time()
-		X, Y = prepare_sequence_data(folder, seq_len_range, mode)
+		X, Y = prepare_sequence_data(folder_list, seq_len_range, mode, sample_interval)
 
 	elif mode == 'multiprocessing':
-		args = [([folder], seq_len_range, mode) for folder in folder_list]
+		args = [([folder], seq_len_range, mode, sample_interval) for folder in folder_list]
 		
 		N_CPU = 2
 		start_t = time.time()
@@ -122,7 +137,7 @@ if __name__=='__main__':
 		print('threading.enumerate()\n', threading.enumerate(),flush=True)
 		threads = []
 		for f in folder_list:
-			t = threading.Thread(target=prepare_sequence_data, args=([f], seq_len_range, mode, q))
+			t = threading.Thread(target=prepare_sequence_data, args=([f], seq_len_range, mode, sample_interval, q))
 			t.start()
 			threads.append(t)
 		for t in threads:
