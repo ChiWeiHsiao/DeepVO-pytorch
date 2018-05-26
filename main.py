@@ -49,22 +49,26 @@ start_t = time.time()
 if len(params.load_data) == 1:
 	data = np.load(params.load_data[0])
 	X, Y = data['x'], data['y']
-	print('X: {}, Y: {}'.format(X.shape, Y.shape))
-	X, Y = torch.from_numpy(X), torch.from_numpy(Y)
-	X = X.type(torch.FloatTensor)  # 0-255 is originally torch.uint8
 elif len(params.load_data) > 1:
 	X, Y = [], []
 	for i, d in enumerate(params.load_data):
 		data = np.load(d)
 		x, y = data['x'], data['y']
 		print('{}: x: {}, y: {}'.format(d, x.shape, y.shape))
-		x, y = torch.from_numpy(x), torch.from_numpy(y)
-		x = x.type(torch.FloatTensor)  # 0-255 is originally torch.uint8
-		X = x if i == 0 else torch.cat((X, x), dim=0)
-		Y = y if i == 0 else torch.cat((Y, y), dim=0)
-print('max in tensor X:', X.max())
-print('X: {}, Y: {}'.format(X.shape, Y.shape))
+		X = x if i == 0 else np.concatenate((X, x), axis=0)
+		Y = y if i == 0 else np.concatenate((Y, y), axis=0)
+
 print('Load data use {} sec'.format(time.time()-start_t))
+print('X: {}, Y: {}'.format(X.shape, Y.shape))
+
+X, Y = torch.from_numpy(X), torch.from_numpy(Y)
+X = X.type(torch.FloatTensor)  # 0-255 is originally torch.uint8
+print('max in tensor X:', X.max())
+
+# Preprocess, X subtract by the mean RGB values of training set
+for c in range(3):
+	mean = torch.mean(X[:, :, c])
+	X[:,:,c] -= mean
 
 train_dataset = Data.TensorDataset(X, Y)
 train_dl = Data.DataLoader(
@@ -97,23 +101,22 @@ for seq in seq_list:
 #x = torch.randn(1, 3, 6, params.img_h, params.img_w).type(torch.FloatTensor))  # b_size, seq_len, channels(3*2andn(1, 3, 6).type(torch.FloatTensor)
 
 # Train
-optimizer = torch.optim.Adagrad(M_deepvo.parameters(), lr=params.lr)
+if params.solver == 'Adagrad':
+	optimizer = torch.optim.Adagrad(M_deepvo.parameters(), lr=params.lr)
+elif params.solver == 'Cosine':
+	optimizer = torch.optim.SGD(M_deepvo.parameters(), lr=params.lr)
 M_deepvo.train()
 
 record_name = params.record_name
 save_model_name = params.save_model_name
 print('Record loss in: ', record_name)
 print('Save model in: ', save_model_name)
-min_loss = 1e9
+min_loss = 1e10
 
 for ep in range(params.epochs):
-	loss_sum = 0
+	loss_mean = 0
 	record_loss_list = []
-	f = open(record_name, 'w') if ep == 0 else open(record_name, 'a')
-	f.write('===== Epoch {} =====\n'.format(ep))
-	f.close()
 	
-	#print('============ Epoch {} ====================='.format(ep))
 	for it, (batch_x, batch_y) in enumerate(train_dl):
 		if use_cuda:
 			batch_y = batch_y.cuda(non_blocking=True)
@@ -121,31 +124,24 @@ for ep in range(params.epochs):
 		# Train
 		ls = M_deepvo.step(batch_x, batch_y, optimizer)
 		record_loss_list.append(ls)
-		'''
-		if it % 1 == 0:
-			ls = ls.cpu().numpy()
-			print('Iteration {}: loss = {}'.format(it, ls))
 
-			f = open(record_name, 'a')
-			f.write('{}\n'.format(ls))
-			f.close()
-			loss_sum += ls
-		'''
-	record_loss_list = [l.cpu().numpy() for l in record_loss_list]
+	# Record mean loss of this epoch
+	record_loss_list = [float(l.cpu().numpy()) for l in record_loss_list]
 	for l in record_loss_list:
-		loss_sum += l
-	f = open(record_name, 'a')
-	f.write('{}'.format(record_loss_list))
-	f.write('===== Epoch {} sum of loss: {} =====\n'.format(ep, loss_sum))
+		loss_mean += l
+	loss_mean /= (it+1)
+
+	f = open(record_name, 'w') if ep == 0 else open(record_name, 'a')
+	f.write('{}\n'.format(record_loss_list))
+	f.write('===== Epoch {} mean of loss: {} =====\n'.format(ep, loss_mean))
 	f.close()
 	print('{}'.format(record_loss_list))
-	print('===== Epoch {} sum of loss: {} =====\n'.format(ep, loss_sum))
+	print('===== Epoch {} mean of loss: {} =====\n'.format(ep, loss_mean))
 
-	if loss_sum < min_loss:
-		min_loss = loss_sum
-		print('Save model at ep {}, loss sum = {}'.format(ep, loss_sum))
+	# Save model
+	if loss_mean < min_loss:
+		min_loss = loss_mean
+		print('Save model at ep {}, mean of loss: {}'.format(ep, loss_mean))
 		torch.save(M_deepvo.state_dict(), save_model_name)
-
-#torch.save(M_deepvo.state_dict(), save_model_name)
 
 
