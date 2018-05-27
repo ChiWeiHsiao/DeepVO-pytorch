@@ -9,7 +9,6 @@ import time
 import torch
 import torch.utils.data as Data
 
-#use_pad = (params.seq_len[0] != params.seq_len[1])
 
 # Model
 M_deepvo = DeepVO(params.img_h, params.img_w)
@@ -21,23 +20,7 @@ M_deepvo.eval()
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     M_deepvo = M_deepvo.cuda()
-'''
-video = '04'
-testdata_path = 'KITTI/segmented_image/04_seq_8_8_im_184_608'
-if os.path.isfile(testdata_path):
-    data = np.load(testdata_path)
-    X, Y = data['x'], data['y']
-else:
-    X, Y = prepare_sequence_data([video], params.seq_len, 'single', overlap=1, sample_interval=None)
 
-print('X: ', X.shape)
-print('Y: ', Y.shape)
-
-# Preprocess, X subtract by the mean RGB values of training set
-for c in range(3):
-    mean = params.RGB_means[c]
-    X[:,:,c] -= mean
-'''
 video = '04'
 fnames = glob.glob('KITTI/images/{}/*.png'.format(video))  #unorderd
 fnames.sort()
