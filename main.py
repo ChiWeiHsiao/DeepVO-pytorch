@@ -114,16 +114,15 @@ elif params.optim['opt'] == 'Cosine':
 	lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_iter, eta_min=0, last_epoch=-1)
 
 if params.resume:
-	print('Load model')
 	M_deepvo.load_state_dict(torch.load(params.load_model_path))
-	print('Load optimizer')
-	opt_state_dict = torch.load(params.load_optimzer_path)
-	optimizer.load_state_dict(opt_state_dict)
+	optimizer.load_state_dict(torch.load(params.load_optimzer_path))
 	#optimizer.state = defaultdict(dict, optimizer.state)
+	print('Load model from: ', params.load_model_path)
+	print('Load optimizer from: ', params.load_optimizer_path)
 
 
 print('Record loss in: ', params.record_path)
-min_loss = self.min_loss
+min_loss = 1e10
 
 M_deepvo.train()
 for ep in range(params.epochs):
