@@ -1,3 +1,5 @@
+import numpy as np
+
 def isRotationMatrix(R) :
 	Rt = np.transpose(R)
 	shouldBeIdentity = np.dot(Rt, R)
@@ -26,7 +28,8 @@ def R_to_angle(Rt):
 		x = np.arctan2(-R[1,2], R[1,1])
 		y = np.arctan2(-R[2,0], sy)
 		z = 0
-	pose_6 = np.concatenate(([x, y, z], t))
+	theta = [x, y, z]
+	pose_6 = np.concatenate((theta, t))
 	assert(pose_6.shape == (6,))
 	return pose_6
 
