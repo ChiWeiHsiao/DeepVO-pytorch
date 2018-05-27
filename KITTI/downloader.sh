@@ -12,9 +12,6 @@ files=(
 08:2011_09_30_drive_0028
 09:2011_09_30_drive_0033
 10:2011_09_30_drive_0034
-#2011_10_03_calib.zip
-#2011_09_26_calib.zip
-#2011_09_30_calib.zip
 )
 
 mkdir 'images'
@@ -42,7 +39,9 @@ for i in ${files[@]}; do
         then
                 dirn=${i:3:10}'/'${i:3}'_sync''/'
                 rm -r $dirn'image_00/' $dirn'image_01/' $dirn'image_02/' $dirn'velodyne_points/'
-                mv $dirn 'images/'$rename
+                #mv $dirn 'images/'$rename
+                mv $dirn'image_03/data' 'images/'$rename
+                rm -r ${dirn:0:10}
         fi
 done
 
