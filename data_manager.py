@@ -158,7 +158,7 @@ if __name__=='__main__':
 	print('Job is done in {} sec'.format(time.time()-start_t))
 	print('X.shape:', X.shape)
 	print('Y.shape:', Y.shape)
-
+	os.makedirs(os.path.dirname(save_name), exist_ok=True)
 	if save_name != None:
 		np.savez(save_name, x=X, y=Y)
 

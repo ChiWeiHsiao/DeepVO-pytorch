@@ -12,6 +12,12 @@ from data_manager import prepare_sequence_data
 
 # Write all hyperparameters to record_path
 p = vars(params)
+if not os.path.exists(os.path.dirname(params.record_path)):
+    try:
+        os.makedirs(os.path.dirname(params.record_path))
+    except OSError as exc: # Guard against race condition
+        if exc.errno != errno.EEXIST:
+            raise
 with open(params.record_path, 'a') as f:
 	f.write('\n'.join("%s: %s" % item for item in p.items()))
 	f.write('\n')
