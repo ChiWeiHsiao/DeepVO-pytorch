@@ -22,16 +22,20 @@ for i in ${files[@]}; do
                 rename=${i:0:2}
                 shortname=${i:3}'_sync.zip'
                 fullname=${i:3}'/'${i:3}'_sync.zip'
-
         else
                 $i=${i:(-3)}
                 shortname=$i
                 fullname=$i
         fi
-        echo "Downloading: "$shortname
 
-        wget 'http://kitti.is.tue.mpg.de/kitti/raw_data/'$fullname
+        wget 'https://s3.eu-central-1.amazonaws.com/avg-kitti/raw_data/'$fullname
+        if [ $? -ne 0 ]
+        then
+                wget 'http://kitti.is.tue.mpg.de/kitti/raw_data/'$fullname
+        fi
+
         unzip -o $shortname
+        #tar -xvf $shortname
         rm $shortname
 
         # Remove image00 image01 image02, rename dir
