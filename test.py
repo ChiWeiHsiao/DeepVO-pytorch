@@ -21,7 +21,7 @@ use_cuda = torch.cuda.is_available()
 if use_cuda:
     M_deepvo = M_deepvo.cuda()
 
-video = '04'
+video = '07' #  07 10 01 04 
 fnames = glob.glob('KITTI/images/{}/*.png'.format(video))  #unorderd
 fnames.sort()
 Y = np.load('KITTI/pose_GT/{}.npy'.format(video))
@@ -29,7 +29,7 @@ x_seq = []
 
 seq_len = params.seq_len[0]
 has_predict = False
-answer = [None, ]
+answer = [[0.0]*6, ]
 for i, fn in enumerate(fnames):
     im = Image.open(fn)
     if im.size != (params.img_w, params.img_h):
