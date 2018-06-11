@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from params import *
+from params import params
 from torch.autograd import Variable
 from torch.nn.init import kaiming_normal
 import numpy as np
@@ -64,6 +64,13 @@ class DeepVO(nn.Module):
         h_n, c_n = self.rnn(flatten)
         out = self.linear(h_n)
         return out
+        #x_pad = torch.nn.utils.rnn.pack_padded_sequence(flatten, x_len, batch_first=True)
+        #rnn_pack, (h_n, c_n) = self.rnn(x_pad, None)
+        #rnn_out = torch.nn.utils.rnn.pad_packed_sequence(rnn_pack, batch_first=self.batch_first)  # (sequence, lengths)
+        #out = self.linear(rnn_out[0])  # rnn_out: (padded sequence, sequence lengths)
+        #seq_len = rnn_out[1]
+        #return out, seq_len
+        
 
     def encode_image(self, x):
         out_conv2 = self.conv2(self.conv1(x))
@@ -73,23 +80,25 @@ class DeepVO(nn.Module):
         out_conv6 = self.conv6(out_conv5)
         return out_conv6
 
-
     def weight_parameters(self):
         return [param for name, param in self.named_parameters() if 'weight' in name]
 
     def bias_parameters(self):
         return [param for name, param in self.named_parameters() if 'bias' in name]
 
-    def step(self, x, y, optimizer):
-        optimizer.zero_grad()
+    def get_loss(self, x, y):
         predicted = self.forward(x)
-        y = y[:, 1:, :]# (batch, seq, dim_pose)
+        y = y[:, 1:, :]  # (batch, seq, dim_pose)
         # Weighted MSE Loss
         angle_loss = torch.nn.functional.mse_loss(predicted[:,:,:3], y[:,:,:3])
         translation_loss = torch.nn.functional.mse_loss(predicted[:,:,3:], y[:,:,3:])
         loss = 100 * angle_loss + translation_loss
+        return loss
+
+    def step(self, x, y, optimizer):
+        optimizer.zero_grad()
+        predicted = self.forward(x)
+        loss = self.get_loss(x, y)
         loss.backward()
         optimizer.step()
-        return loss.data  #.cpu().numpy()
-
-
+        return loss
