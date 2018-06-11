@@ -14,13 +14,14 @@ from data_manager import prepare_sequence_data
 p = vars(params)
 with open(params.record_path, 'a') as f:
 	f.write('\n'.join("%s: %s" % item for item in p.items()))
-	f.write('\n')
+	f.write('\n'+'='*50 + '\n')
+
 
 M_deepvo = DeepVO(params.img_h, params.img_w)
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     print('CUDA used.')
-    M_deepvo.cuda()
+    M_deepvo = M_deepvo.cuda()
 
 
 # Load FlowNet weights pretrained with FlyingChairs
@@ -39,51 +40,67 @@ if params.pretrained_flownet and params.load_model_path == None:
 
 # Prepare Data
 #X, Y, seq_lengths = prepare_sequence_data(['07'], params.seq_len, 'single')
-use_pad = (params.seq_len[0] != params.seq_len[1])
-start_t = time.time()
-if len(params.load_data) == 1:
-	data = np.load(params.load_data[0])
-	X, Y = data['x'], data['y']
-	if use_pad:
-		seq_lengths = data['seq_lengths']
-elif len(params.load_data) > 1:
-	X, Y = [], []
-	seq_lengths = []
-	for i, d in enumerate(params.load_data):
-		data = np.load(d)
-		x, y = data['x'], data['y']
-		print('{}: x: {}, y: {}'.format(d, x.shape, y.shape))
-		X = x if i == 0 else np.concatenate((X, x), axis=0)
-		Y = y if i == 0 else np.concatenate((Y, y), axis=0)
+def load_data(data_path_list):
+	use_pad = (params.seq_len[0] != params.seq_len[1])
+	start_t = time.time()
+	if len(data_path_list) == 1:
+		data = np.load(data_path_list[0])
+		X, Y = data['x'], data['y']
 		if use_pad:
-			s = data['seq_lengths']
-			seq_lengths = s if i == 0 else np.concatenate((seq_lengths, s), axis=0) 
+			seq_lengths = data['seq_lengths']
+	elif len(data_path_list) > 1:
+		X, Y = [], []
+		seq_lengths = []
+		for i, d in enumerate(data_path_list):
+			data = np.load(d)
+			x, y = data['x'], data['y']
+			print('{}: x: {}, y: {}'.format(d, x.shape, y.shape))
+			X = x if i == 0 else np.concatenate((X, x), axis=0)
+			Y = y if i == 0 else np.concatenate((Y, y), axis=0)
+			if use_pad:
+				s = data['seq_lengths']
+				seq_lengths = s if i == 0 else np.concatenate((seq_lengths, s), axis=0) 
+	print('Load data use {} sec'.format(time.time()-start_t))
+	print('X: {}, Y: {}'.format(X.shape, Y.shape))
+
+	X, Y = torch.from_numpy(X), torch.from_numpy(Y)
+	X = X.type(torch.FloatTensor)  # 0-255 is originally torch.uint8
 
 
-print('Load data use {} sec'.format(time.time()-start_t))
-print('X: {}, Y: {}'.format(X.shape, Y.shape))
-if use_pad:
-	print('Seq_lengths: {}'.format(seq_lengths.shape))
-	seq_lengths = troch.from_numpy(seq_lengths)
+	if use_pad:
+		print('Seq_lengths: {}'.format(seq_lengths.shape))
+		seq_lengths = troch.from_numpy(seq_lengths)
+		return X, Y, seq_lengths
+	else:
+		return X, Y, None
 
-X, Y = torch.from_numpy(X), torch.from_numpy(Y)
-X = X.type(torch.FloatTensor)  # 0-255 is originally torch.uint8
-print('max in tensor X:', X.max())
+train_X, train_Y, train_S = load_data(params.train_data_path)
+valid_X, valid_Y, valid_S = load_data(params.valid_data_path)
 
 # Preprocess, X subtract by the mean RGB values of training set
 for c in range(3):
-	X[:,:,c] -= params.RGB_means[c]
+	train_X[:,:,c] -= params.RGB_means[c]
+	valid_X[:,:,c] -= params.RGB_means[c]
+	# Calculate proper mean_RGB and store to params.RGB_means
 	#mean = torch.mean(X[:, :, c])
 	#print('mean: ', mean.numpy())
-	#X[:,:,c] -= mean
 
-train_dataset = Data.TensorDataset(X, Y)
-#train_dataset = Data.TensorDataset(X, Y, seq_lengths)  #AttributeError: 'list' object has no attribute 'size
+#if use_pad:
+#	train_dataset = Data.TensorDataset(X, Y, seq_lengths)  #AttributeError: 'list' object has no attribute 'size
+train_dataset = Data.TensorDataset(train_X, train_Y)
 train_dl = Data.DataLoader(
     dataset=train_dataset,
     batch_size=params.batch_size,
     shuffle=True,
 )
+
+#valid_dataset = Data.TensorDataset(valid_X, valid_Y)
+#valid_dl = Data.DataLoader(
+#    dataset=valid_dataset,
+#    batch_size=params.batch_size,
+#    shuffle=False,
+#)
+
 
 ###############################################################
 #     Prepare Data // By Yukun
@@ -101,8 +118,6 @@ for seq in seq_list:
     #DEEPVO TRAINING PROCESS
     
 '''
-# toy data
-#x = torch.randn(1, 3, 6, params.img_h, params.img_w).type(torch.FloatTensor))  # b_size, seq_len, channels(3*2andn(1, 3, 6).type(torch.FloatTensor)
 
 if params.optim['opt'] == 'Adam':
 	optimizer = torch.optim.Adam(M_deepvo.parameters(), lr=0.001, betas=(0.9, 0.999))
@@ -127,36 +142,45 @@ min_loss = 1e10
 M_deepvo.train()
 for ep in range(params.epochs):
 	loss_mean = 0
+	loss_mean_valid = 0
 	record_loss_list = []
 	
 	for it, (batch_x, batch_y) in enumerate(train_dl):
 		if use_cuda:
 			batch_y = batch_y.cuda(non_blocking=True)
 			batch_x = batch_x.cuda(non_blocking=True)
-		# Train
-		ls = M_deepvo.step(batch_x, batch_y, optimizer)
+		ls = M_deepvo.step(batch_x, batch_y, optimizer).data.cpu().numpy()
+		ls = float(ls)
 		if params.optim == 'Cosine':
 			lr_scheduler.step()
 		record_loss_list.append(ls)
-
-	# Record mean loss of this epoch
-	record_loss_list = [float(l.cpu().numpy()) for l in record_loss_list]
+	# Record train loss of this epoch
 	for l in record_loss_list:
 		loss_mean += l
 	loss_mean /= (it+1)
 
+	# Calculate valid mean loss
+	n_iter_valid = int(len(valid_Y) / params.batch_size)
+	for it in range(n_iter_valid):
+		v_x = valid_X[it*params.batch_size:it*params.batch_size+params.batch_size]
+		v_y = valid_Y[it*params.batch_size:it*params.batch_size+params.batch_size]
+		if use_cuda:
+			v_y = v_y.cuda()
+			v_x = v_x.cuda()
+		ls = M_deepvo.get_loss(v_x, v_y).data.cpu().numpy()
+		loss_mean_valid += float(ls)
+	loss_mean_valid /= (it+1)
+
 	f = open(params.record_path, 'a')
-	f.write('{}\n'.format(record_loss_list))
-	f.write('===== Epoch {} mean of loss: {} =====\n'.format(ep, loss_mean))
-	
-	print('{}'.format(record_loss_list))
-	print('===== Epoch {} mean of loss: {} =====\n'.format(ep, loss_mean))
+	f.write('Epoch {}\nmean of train loss: {}\nmean of valid loss: {}\n\n'.format(ep, loss_mean, loss_mean_valid))
+	print('Epoch {}\nmean of train loss: {}\nmean of valid loss: {}\n\n'.format(ep, loss_mean, loss_mean_valid))
 
 	# Save model
-	if loss_mean < min_loss and ep % 2 == 0:
-		min_loss = loss_mean
+	check_interval = 2
+	if loss_mean_valid < min_loss and ep % check_interval == 0:
+		min_loss = loss_mean_valid
 		f.write('Save model!\n')
-		print('Save model at ep {}, mean of loss: {}'.format(ep, loss_mean))  # use 4.6 sec 
+		print('Save model at ep {}, mean of valid loss: {}'.format(ep, loss_mean_valid))  # use 4.6 sec 
 		torch.save(M_deepvo.state_dict(), params.save_model_path)
 		torch.save(optimizer.state_dict(), params.save_optimzer_path)
 	f.close()
