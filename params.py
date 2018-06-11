@@ -45,5 +45,5 @@ class Parameters():
 			f.write('\n'.join("%s: %s" % item for item in p.items()))
 			f.write('\n'+'='*50 + '\n')
 
-params = Parameters()
+par = Parameters()
 

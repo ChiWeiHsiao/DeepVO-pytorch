@@ -1,4 +1,4 @@
-from params import params
+from params import par
 from data_manager import prepare_sequence_data
 from model import DeepVO
 import numpy as np
@@ -11,9 +11,9 @@ import torch.utils.data as Data
 
 
 # Model
-M_deepvo = DeepVO(params.img_h, params.img_w)
-M_deepvo.load_state_dict(torch.load(params.load_model_path))
-print('Load model from: ', params.load_model_path)
+M_deepvo = DeepVO(par.img_h, par.img_w)
+M_deepvo.load_state_dict(torch.load(par.load_model_path))
+print('Load model from: ', par.load_model_path)
 
 M_deepvo.eval()
 
@@ -27,13 +27,13 @@ fnames.sort()
 Y = np.load('KITTI/pose_GT/{}.npy'.format(video))
 x_seq = []
 
-seq_len = params.seq_len[0]
+seq_len = par.seq_len[0]
 has_predict = False
 answer = [[0.0]*6, ]
 for i, fn in enumerate(fnames):
     im = Image.open(fn)
-    if im.size != (params.img_w, params.img_h):
-        im = im.resize((params.img_w, params.img_h), Image.ANTIALIAS)
+    if im.size != (par.img_w, par.img_h):
+        im = im.resize((par.img_w, par.img_h), Image.ANTIALIAS)
     im = np.array(im)  #, dtype=float)  # (h, w, c)
     im = np.rollaxis(im, 2, 0)  #(c, h, w)
     im = np.expand_dims(im, axis=0)  #(1, c, h, w)
@@ -55,7 +55,7 @@ for i, fn in enumerate(fnames):
             x = x.type(torch.FloatTensor)
             # preprocess, subtrac by RGB mean
             for c in range(3):
-                x[:,:,c] -= params.RGB_means[c]
+                x[:,:,c] -= par.RGB_means[c]
 
             if use_cuda:
                 x = x.cuda()

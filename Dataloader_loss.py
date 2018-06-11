@@ -4,7 +4,7 @@
 # In[ ]:
 
 
-from params import *
+from params import par
 from model import DeepVO
 import cv2
 import math
@@ -100,10 +100,10 @@ class KITTI_Data(Dataset):
         #prepare ground truth poses data
 
         #Stack the images for seqs
-        return np.stack(images,axis = 0), self.GT[index:index+params.seq_len,:]
+        return np.stack(images,axis = 0), self.GT[index:index+par.seq_len,:]
 
     def __len__(self):
-        return self.GT.shape[0]-1-params.seq_len-1
+        return self.GT.shape[0]-1-par.seq_len-1
 
 #read groundtruth and return np.array
 def readGT(root):

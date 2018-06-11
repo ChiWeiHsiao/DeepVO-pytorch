@@ -1,4 +1,4 @@
-from params import params
+from params import par
 from model import DeepVO
 #from Dataloader_loss import *
 
@@ -7,17 +7,10 @@ import time
 import torch
 
 import torch.utils.data as Data
-from data_manager import prepare_sequence_data
+from data_manager import pregipare_sequence_data
 
 
-# Write all hyperparameters to record_path
-p = vars(params)
-with open(params.record_path, 'a') as f:
-	f.write('\n'.join("%s: %s" % item for item in p.items()))
-	f.write('\n'+'='*50 + '\n')
-
-
-M_deepvo = DeepVO(params.img_h, params.img_w)
+M_deepvo = DeepVO(par.img_h, par.img_w)
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     print('CUDA used.')
@@ -25,11 +18,11 @@ if use_cuda:
 
 
 # Load FlowNet weights pretrained with FlyingChairs
-if params.pretrained_flownet and params.load_model_path == None:
+if par.pretrained_flownet and par.load_model_path == None:
 	if use_cuda:
-		pretrained_w = torch.load(params.pretrained_flownet)
+		pretrained_w = torch.load(par.pretrained_flownet)
 	else:
-		pretrained_w = torch.load(params.pretrained_flownet_flownet, map_location='cpu')
+		pretrained_w = torch.load(par.pretrained_flownet_flownet, map_location='cpu')
 	print('Load FlowNet pretrained model')
 	# Use only conv-layer-part of FlowNet as CNN for DeepVO
 	model_dict = M_deepvo.state_dict()
@@ -39,9 +32,9 @@ if params.pretrained_flownet and params.load_model_path == None:
 
 
 # Prepare Data
-#X, Y, seq_lengths = prepare_sequence_data(['07'], params.seq_len, 'single')
+#X, Y, seq_lengths = prepare_sequence_data(['07'], par.seq_len, 'single')
 def load_data(data_path_list):
-	use_pad = (params.seq_len[0] != params.seq_len[1])
+	use_pad = (par.seq_len[0] != par.seq_len[1])
 	start_t = time.time()
 	if len(data_path_list) == 1:
 		data = np.load(data_path_list[0])
@@ -74,14 +67,14 @@ def load_data(data_path_list):
 	else:
 		return X, Y, None
 
-train_X, train_Y, train_S = load_data(params.train_data_path)
-valid_X, valid_Y, valid_S = load_data(params.valid_data_path)
+train_X, train_Y, train_S = load_data(par.train_data_path)
+valid_X, valid_Y, valid_S = load_data(par.valid_data_path)
 
 # Preprocess, X subtract by the mean RGB values of training set
 for c in range(3):
-	train_X[:,:,c] -= params.RGB_means[c]
-	valid_X[:,:,c] -= params.RGB_means[c]
-	# Calculate proper mean_RGB and store to params.RGB_means
+	train_X[:,:,c] -= par.RGB_means[c]
+	valid_X[:,:,c] -= par.RGB_means[c]
+	# Calculate proper mean_RGB and store to par.RGB_means
 	#mean = torch.mean(X[:, :, c])
 	#print('mean: ', mean.numpy())
 
@@ -90,14 +83,14 @@ for c in range(3):
 train_dataset = Data.TensorDataset(train_X, train_Y)
 train_dl = Data.DataLoader(
     dataset=train_dataset,
-    batch_size=params.batch_size,
+    batch_size=par.batch_size,
     shuffle=True,
 )
 
 #valid_dataset = Data.TensorDataset(valid_X, valid_Y)
 #valid_dl = Data.DataLoader(
 #    dataset=valid_dataset,
-#    batch_size=params.batch_size,
+#    batch_size=par.batch_size,
 #    shuffle=False,
 #)
 
@@ -111,7 +104,7 @@ train_dl = Data.DataLoader(
 '''
 seq_list = ['01']
 for seq in seq_list:
-    train_dl = DataLoader(,batch_size=params.batch_size,seq_len = params.seq_len,num_workers = 5) 
+    train_dl = DataLoader(,batch_size=par.batch_size,seq_len = par.seq_len,num_workers = 5) 
     
     #Custom loss function
     criterion = DeepvoLoss()
@@ -119,28 +112,28 @@ for seq in seq_list:
     
 '''
 
-if params.optim['opt'] == 'Adam':
+if par.optim['opt'] == 'Adam':
 	optimizer = torch.optim.Adam(M_deepvo.parameters(), lr=0.001, betas=(0.9, 0.999))
-elif params.optim['opt'] == 'Adagrad':
-	optimizer = torch.optim.Adagrad(M_deepvo.parameters(), lr=params.optim['lr'])
-elif params.optim['opt'] == 'Cosine':
-	optimizer = torch.optim.SGD(M_deepvo.parameters(), lr=params.optim['lr'])
-	T_iter = params.optim['T']*len(train_dl)
+elif par.optim['opt'] == 'Adagrad':
+	optimizer = torch.optim.Adagrad(M_deepvo.parameters(), lr=par.optim['lr'])
+elif par.optim['opt'] == 'Cosine':
+	optimizer = torch.optim.SGD(M_deepvo.parameters(), lr=par.optim['lr'])
+	T_iter = par.optim['T']*len(train_dl)
 	lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_iter, eta_min=0, last_epoch=-1)
 
-if params.resume:
-	M_deepvo.load_state_dict(torch.load(params.load_model_path))
-	optimizer.load_state_dict(torch.load(params.load_optimzer_path))
+if par.resume:
+	M_deepvo.load_state_dict(torch.load(par.load_model_path))
+	optimizer.load_state_dict(torch.load(par.load_optimzer_path))
 	#optimizer.state = defaultdict(dict, optimizer.state)
-	print('Load model from: ', params.load_model_path)
-	print('Load optimizer from: ', params.load_optimizer_path)
+	print('Load model from: ', par.load_model_path)
+	print('Load optimizer from: ', par.load_optimizer_path)
 
 
-print('Record loss in: ', params.record_path)
+print('Record loss in: ', par.record_path)
 min_loss = 1e10
 
 M_deepvo.train()
-for ep in range(params.epochs):
+for ep in range(par.epochs):
 	loss_mean = 0
 	loss_mean_valid = 0
 	record_loss_list = []
@@ -151,7 +144,7 @@ for ep in range(params.epochs):
 			batch_x = batch_x.cuda(non_blocking=True)
 		ls = M_deepvo.step(batch_x, batch_y, optimizer).data.cpu().numpy()
 		ls = float(ls)
-		if params.optim == 'Cosine':
+		if par.optim == 'Cosine':
 			lr_scheduler.step()
 		record_loss_list.append(ls)
 	# Record train loss of this epoch
@@ -160,10 +153,10 @@ for ep in range(params.epochs):
 	loss_mean /= (it+1)
 
 	# Calculate valid mean loss
-	n_iter_valid = int(len(valid_Y) / params.batch_size)
+	n_iter_valid = int(len(valid_Y) / par.batch_size)
 	for it in range(n_iter_valid):
-		v_x = valid_X[it*params.batch_size:it*params.batch_size+params.batch_size]
-		v_y = valid_Y[it*params.batch_size:it*params.batch_size+params.batch_size]
+		v_x = valid_X[it*par.batch_size:it*par.batch_size+par.batch_size]
+		v_y = valid_Y[it*par.batch_size:it*par.batch_size+par.batch_size]
 		if use_cuda:
 			v_y = v_y.cuda()
 			v_x = v_x.cuda()
@@ -171,7 +164,7 @@ for ep in range(params.epochs):
 		loss_mean_valid += float(ls)
 	loss_mean_valid /= (it+1)
 
-	f = open(params.record_path, 'a')
+	f = open(par.record_path, 'a')
 	f.write('Epoch {}\nmean of train loss: {}\nmean of valid loss: {}\n\n'.format(ep, loss_mean, loss_mean_valid))
 	print('Epoch {}\nmean of train loss: {}\nmean of valid loss: {}\n\n'.format(ep, loss_mean, loss_mean_valid))
 
@@ -181,6 +174,6 @@ for ep in range(params.epochs):
 		min_loss = loss_mean_valid
 		f.write('Save model!\n')
 		print('Save model at ep {}, mean of valid loss: {}'.format(ep, loss_mean_valid))  # use 4.6 sec 
-		torch.save(M_deepvo.state_dict(), params.save_model_path)
-		torch.save(optimizer.state_dict(), params.save_optimzer_path)
+		torch.save(M_deepvo.state_dict(), par.save_model_path)
+		torch.save(optimizer.state_dict(), par.save_optimzer_path)
 	f.close()

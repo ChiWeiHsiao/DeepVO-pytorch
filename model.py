@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from params import params
+from params import par
 from torch.autograd import Variable
 from torch.nn.init import kaiming_normal
 import numpy as np
@@ -45,9 +45,9 @@ class DeepVO(nn.Module):
         __tmp = self.encode_image(__tmp)
 
         # RNN
-        #self.rnn = nn.LSTM(input_size=1024*20*6, hidden_size=params.rnn_hidden_size, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
-        self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), hidden_size=params.rnn_hidden_size, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
-        self.linear = nn.Linear(in_features=params.rnn_hidden_size, out_features=6)
+        #self.rnn = nn.LSTM(input_size=1024*20*6, hidden_size=par.rnn_hidden_size, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
+        self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), hidden_size=par.rnn_hidden_size, num_layers=2, batch_first=True)  # IMG_SIZE = (1241, 376), RNN_INPUT_SIZE = (1024, 20, 6)
+        self.linear = nn.Linear(in_features=par.rnn_hidden_size, out_features=6)
 
     def forward(self, x): 
         # x: (batch, seq_len, channel, width, height)

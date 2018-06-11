@@ -6,7 +6,7 @@ from PIL import Image
 import torch
 import torch.utils.data as Data
 import time
-from params import *
+from params import par
 import psutil
 from sys import getsizeof
 
@@ -36,8 +36,8 @@ def prepare_sequence_data(folder_list, seq_len_range=[5,5], mode='single', overl
 		fnames.sort()
 		for fname in fnames:
 			im = Image.open(fname)
-			if im.size != (params.img_w, params.img_h):
-				im = im.resize((params.img_w, params.img_h), Image.ANTIALIAS)
+			if im.size != (par.img_w, par.img_h):
+				im = im.resize((par.img_w, par.img_h), Image.ANTIALIAS)
 			im = np.array(im)  # (h, w, c)
 			#im = plt.imread(fname)  #(h, w, c)
 			im = np.rollaxis(im, 2, 0)  #(c, h, w)
@@ -109,15 +109,15 @@ if __name__=='__main__':
 	sample_interval = None  # None 2
 	mode = 'single'  # 'single' 'multiprocessing'
 	folder_list = ['04']  # 01 07 09
-	seq_len_range = params.seq_len
-	save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format('_'.join(folder_list), seq_len_range[0], seq_len_range[1], params.img_h, params.img_w)
+	seq_len_range = par.seq_len
+	save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format('_'.join(folder_list), seq_len_range[0], seq_len_range[1], par.img_h, par.img_w)
 	print('start {}'.format(mode), flush=True)
-	print('Seq Len: {}, Image size: {}, {}'.format(params.seq_len, params.img_w, params.img_h))
+	print('Seq Len: {}, Image size: {}, {}'.format(par.seq_len, par.img_w, par.img_h))
 	print('Sample Overlap: {}, Sample starts interval: {}'.format(overlap, sample_interval))
 	if mode == 'single': 
 		save_name = 'KITTI/segmented_image/{}_seq_{}_{}_im_{}_{}'.format(folder_list[0], 
 			seq_len_range[0], seq_len_range[1],
-			params.img_h, params.img_w)
+			par.img_h, par.img_w)
 		start_t = time.time()
 		X, Y = prepare_sequence_data(folder_list, seq_len_range, mode, overlap, sample_interval)
 
