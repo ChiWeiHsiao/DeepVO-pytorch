@@ -48,45 +48,19 @@ class DeepVO(nn.Module):
         self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), hidden_size=par.rnn_hidden_size, num_layers=2, batch_first=True)
         self.linear = nn.Linear(in_features=par.rnn_hidden_size, out_features=6)
 
-    def forward(self, x, x_len): 
+    def forward(self, x): 
         # x: (batch, seq_len, channel, width, height)
         # stack_image
         x = torch.cat(( x[:, :-1], x[:, 1:]), dim=2)
         batch_size = x.size(0)
         seq_len = x.size(1)
-        x_len = x_len-1
-        
-        # Sort x by length
-        x_sort_idx = np.argsort(-x_len)
-        x = x[x_sort_idx]
-        x_len = x_len[x_sort_idx]
-        x_unsort_idx = np.argsort(x_sort_idx)
-
-x = torch.randn(10)
-y, ind = torch.sort(x, 0)
-unsorted = y.new(*y.size())
-unsorted.scatter_(0, ind, y)
-print((x - unsorted).abs().max())
-
-
         # CNN
         x = x.view(batch_size*seq_len, x.size(2), x.size(3), x.size(4))
         x = self.encode_image(x)
-        flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))
-        
+        flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))        
         # RNN
-        #out, hc = self.rnn(flatten)
-        #out = self.linear(out)
-        #return out
-
-        # RNN
-        x_p = torch.nn.utils.rnn.pack_padded_sequence(flatten, x_len, batch_first=True)
-        rnn_pack, (h_n, c_n) = self.rnn(x_p, None)
-        rnn_out = torch.nn.utils.rnn.pad_packed_sequence(rnn_pack, batch_first=True)
-        out = rnn_out[0]  # rnn_out: (padded sequence, sequence lengths)
+        out, hc = self.rnn(flatten)
         out = self.linear(out)
-        # Unsort out
-        out = out[x_unsort_idx]
         return out
         
 
