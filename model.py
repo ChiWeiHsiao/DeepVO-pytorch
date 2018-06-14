@@ -89,7 +89,6 @@ class DeepVO(nn.Module):
 
     def step(self, x, y, optimizer):
         optimizer.zero_grad()
-        predicted = self.forward(x)
         loss = self.get_loss(x, y)
         loss.backward()
         optimizer.step()
