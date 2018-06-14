@@ -42,7 +42,7 @@ def get_data_info(folder_list, seq_len_range, overlap, sample_interval, pad_y=Fa
                     y_segs = y_segs[:-1]
                 Y += y_segs
                 X_path += x_segs
-                X_len.append(len(x_segs))
+                X_len += [len(xs) for xs in x_segs]
         # Random segment to sequences with diff lengths
         else:
             assert(overlap < min(seq_len_range))
@@ -119,7 +119,7 @@ class ImageSequenceDataset(Dataset):
 
     def __getitem__(self, index):
         groundtruth_sequence = self.groundtruth_arr[index]
-        groundtruth_sequence = torch.tensor(groundtruth_sequence)
+        groundtruth_sequence = torch.FloatTensor(groundtruth_sequence)
         
         image_path_sequence = self.image_arr[index]
         sequence_len = torch.tensor(self.seq_len_list[index])
