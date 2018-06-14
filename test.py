@@ -22,9 +22,9 @@ if use_cuda:
     M_deepvo = M_deepvo.cuda()
 
 video = '07' #  07 10 01 04 
-fnames = glob.glob('KITTI/images/{}/*.png'.format(video))  #unorderd
+fnames = glob.glob('{}{}/*.png'.format(par.image_dir, video))  #unorderd
 fnames.sort()
-Y = np.load('KITTI/pose_GT/{}.npy'.format(video))
+Y = np.load('{}{}.npy'.format(par.pose_dir, video))
 x_seq = []
 
 seq_len = par.seq_len[0]
@@ -55,7 +55,7 @@ for i, fn in enumerate(fnames):
             x = x.type(torch.FloatTensor)
             # preprocess, subtrac by RGB mean
             for c in range(3):
-                x[:,:,c] -= par.RGB_means[c]
+                x[:,:,c] -= par.subtract_means[c]
 
             if use_cuda:
                 x = x.cuda()

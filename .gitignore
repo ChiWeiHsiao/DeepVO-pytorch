@@ -1,5 +1,8 @@
 KITTI/images/
-KITTI/segmented_image/
 KITTI/devkit/
-pose.m
 *.png
+records/
+result/
+models/
+pretrained/
+*.ipynb

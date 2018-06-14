@@ -21,7 +21,7 @@ video = '09'  # 01 04 10
 overfit =  '' #'overfit_' #''
 print('Testing video {}'.format(video))
 
-GT_pose_path = 'KITTI/pose_GT/{}.npy'.format(video)
+GT_pose_path = '{}{}.npy'.format(par.pose_dir, video)  #'KITTI/pose_GT/{}.npy'.format(video)
 gt = np.load(GT_pose_path)
 pose_result_path = 'result/{}out_{}.txt'.format(overfit, video)
 #pose_result_path = 'result/out_{}.txt'.format(video)
