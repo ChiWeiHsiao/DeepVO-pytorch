@@ -32,12 +32,12 @@ if par.pretrained_flownet and par.load_model_path == None:
 train_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_interval=None)
 train_sampler = SortedRandomBatchSampler(train_df, par.batch_size, drop_last=True)
 train_dataset = ImageSequenceDataset(train_df, (par.img_w, par.img_h), par.subtract_means)
-train_dl = DataLoader(dataset, batch_sampler=train_sampler, num_workers=par.n_processors)
+train_dl = DataLoader(train_dataset, batch_sampler=train_sampler, num_workers=par.n_processors)
 
 valid_df = get_data_info(folder_list=par.valid_video, seq_len_range=par.seq_len, overlap=1, sample_interval=None)
 valid_sampler = SortedRandomBatchSampler(valid_df, par.batch_size, drop_last=True)
 valid_dataset = ImageSequenceDataset(valid_df, (par.img_w, par.img_h), par.subtract_means)
-valid_dl = DataLoader(dataset, batch_sampler=valid_sampler, num_workers=par.n_processors)
+valid_dl = DataLoader(valid_dataset, batch_sampler=valid_sampler, num_workers=par.n_processors)
 
 
 
