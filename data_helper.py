@@ -113,7 +113,7 @@ class ImageSequenceDataset(Dataset):
             self.transformer = transforms.ToTensor()
         self.subtract_mean = subtract_mean
         self.data_info = info_dataframe
-        self.seq_len_list = list(df.seq_len)
+        self.seq_len_list = list(self.data_info.seq_len)
         self.image_arr = np.asarray(self.data_info.image_path)  # image paths
         self.groundtruth_arr = np.asarray(self.data_info.pose)
 
