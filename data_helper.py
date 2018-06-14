@@ -80,15 +80,26 @@ class SortedRandomBatchSampler(Sampler):
         self.df = info_dataframe
         self.batch_size = batch_size
         self.drop_last = drop_last
+        self.unique_seq_lens = sorted(self.df.iloc[:].seq_len.unique(), reverse=True)
+        # Calculate len (num of batches, not num of samples)
+        self.len = 0
+        for v in self.unique_seq_lens:
+            n_sample = len(self.df.loc[self.df.seq_len == v])
+            n_batch = int(n_sample / self.batch_size)
+            if not self.drop_last and n_sample % self.batch_size != 0:
+                n_batch += 1
+            self.len += n_batch
 
     def __iter__(self):
-        unique_seq_lens = sorted(self.df.iloc[:].seq_len.unique(), reverse=True)
+        
         # Calculate number of sameples in each group (grouped by seq_len)
         list_batch_indexes = []
         start_idx = 0
-        for v in unique_seq_lens:
+        for v in self.unique_seq_lens:
             n_sample = len(self.df.loc[self.df.seq_len == v])
             n_batch = int(n_sample / self.batch_size)
+            print('debug n_sample: ', n_sample)
+            print('debug n_batch: ', n_batch)
             if not self.drop_last and n_sample % self.batch_size != 0:
                 n_batch += 1
             rand_idxs = (start_idx + torch.randperm(n_sample)).tolist()
@@ -98,7 +109,7 @@ class SortedRandomBatchSampler(Sampler):
         return iter(list_batch_indexes)
 
     def __len__(self):
-        return len(self.df)
+        return self.len
 
 
 class ImageSequenceDataset(Dataset):
