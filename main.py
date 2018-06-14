@@ -64,7 +64,7 @@ M_deepvo.train()
 for ep in range(par.epochs):
 	loss_mean = 0
 	loss_mean_valid = 0
-	f.write('Epoch {}'.format(ep+1))
+	
 	for it, (_, t_x, t_y) in enumerate(train_dl):
 		if use_cuda:
 			t_x = t_x.cuda(non_blocking=True)
@@ -84,6 +84,7 @@ for ep in range(par.epochs):
 	loss_mean_valid /= (it+1)
 
 	f = open(par.record_path, 'a')
+	f.write('Epoch {}'.format(ep+1))
 	f.write('train loss mean: {}\nvalid loss mean: {}\n\n'.format(loss_mean, loss_mean_valid))
 	print('train loss mean: {}\nvalid loss mean: {}\n\n'.format(loss_mean, loss_mean_valid))
 

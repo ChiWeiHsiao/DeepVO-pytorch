@@ -43,7 +43,8 @@ class Parameters():
 
 		# Write all hyperparameters to record_path
 		p = vars(self)
-		with open(self.record_path, 'a') as f:
+		mode = 'a' if self.resume else 'w'
+		with open(self.record_path, mode) as f:
 			f.write('\n'.join("%s: %s" % item for item in p.items()))
 			f.write('\n'+'='*50 + '\n')
 
