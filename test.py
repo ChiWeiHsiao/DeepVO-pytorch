@@ -1,5 +1,4 @@
 from params import par
-from data_manager import prepare_sequence_data
 from model import DeepVO
 import numpy as np
 from PIL import Image

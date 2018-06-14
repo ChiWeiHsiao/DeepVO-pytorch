@@ -5,7 +5,6 @@ import numpy as np
 import time
 import torch
 import torch.utils.data as Data
-from data_manager import pregipare_sequence_data
 
 
 M_deepvo = DeepVO(par.img_h, par.img_w)
