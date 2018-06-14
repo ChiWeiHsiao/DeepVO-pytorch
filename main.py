@@ -84,8 +84,8 @@ for ep in range(par.epochs):
 	loss_mean_valid /= (it+1)
 
 	f = open(par.record_path, 'a')
-	f.write('train loss mean: {}\nvalid loss nmean: {}\n\n'.format(loss_mean, loss_mean_valid))
-	print('train loss mean: {}\nvalid loss nmean: {}\n\n'.format(loss_mean, loss_mean_valid))
+	f.write('train loss mean: {}\nvalid loss mean: {}\n\n'.format(loss_mean, loss_mean_valid))
+	print('train loss mean: {}\nvalid loss mean: {}\n\n'.format(loss_mean, loss_mean_valid))
 
 	# Save model
 	check_interval = 2
