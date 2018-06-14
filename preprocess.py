@@ -49,9 +49,6 @@ def create_pose_data():
 		print('Transforming {}...'.format(fn))
 		with open(fn) as f:
 			lines = [line.split('\n')[0] for line in f.readlines()] 
-			# clean unused pose
-			lines = lines[info[video][0]:]
-			lines = lines[:info[video][1]+1]
 			poses = [ R_to_angle([float(value) for value in l.split(' ')]) for l in lines]  # list of pose (pose=list of 12 floats)
 			poses = np.array(poses)
 			np.save(fn.split('.')[0]+'.npy', poses)
@@ -92,5 +89,4 @@ if __name__ == '__main__':
 	for folder in train_video:
 		image_path_list += glob.glob('images/{}/*.png'.format(folder))
 	calculate_rgb_mean(image_path_list)
-	
 
