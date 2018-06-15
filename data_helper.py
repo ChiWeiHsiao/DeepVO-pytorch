@@ -134,6 +134,7 @@ class ImageSequenceDataset(Dataset):
     def __getitem__(self, index):
         groundtruth_sequence = self.groundtruth_arr[index]
         groundtruth_sequence = torch.FloatTensor(groundtruth_sequence)
+        groundtruth_sequence = groundtruth_sequence - groundtruth_sequence[0]  # get the relative pose
         
         image_path_sequence = self.image_arr[index]
         sequence_len = torch.tensor(self.seq_len_list[index])
