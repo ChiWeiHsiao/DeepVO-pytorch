@@ -98,8 +98,6 @@ class SortedRandomBatchSampler(Sampler):
         for v in self.unique_seq_lens:
             n_sample = len(self.df.loc[self.df.seq_len == v])
             n_batch = int(n_sample / self.batch_size)
-            print('debug n_sample: ', n_sample)
-            print('debug n_batch: ', n_batch)
             if not self.drop_last and n_sample % self.batch_size != 0:
                 n_batch += 1
             rand_idxs = (start_idx + torch.randperm(n_sample)).tolist()
@@ -113,11 +111,16 @@ class SortedRandomBatchSampler(Sampler):
 
 
 class ImageSequenceDataset(Dataset):
-    def __init__(self, info_dataframe, resize=None, subtract_mean=None):
+    def __init__(self, info_dataframe, resize_mode='crop', new_size=None, subtract_mean=None):
         # Transforms
-        if resize != None:
+        if resize_mode == 'crop':
             self.transformer = transforms.Compose([
-                            transforms.Resize((resize[0], resize[1])),                                                                            
+                            transforms.CenterCrop((new_size[0], new_size[1])),                                                                            
+                            transforms.ToTensor(),
+                            ])
+        elif resize_mode == 'rescale':
+            self.transformer = transforms.Compose([
+                            transforms.Resize((new_size[0], new_size[1])),                                                                            
                             transforms.ToTensor(),
                             ])
         else:
@@ -163,9 +166,10 @@ if __name__ == '__main__':
     print('Elapsed Time (get_data_info): {} sec'.format(time.time()-start_t))
     # Customized Dataset, Sampler
     n_workers = 4
-    resize = (150, 600)
+    resize_mode = 'crop'
+    new_s = (150, 600)
     subtract_mean = (89.87475578450945/255, 94.48404712783562/255, 92.50648653696369/255)
-    dataset = ImageSequenceDataset(df, resize, subtract_mean)
+    dataset = ImageSequenceDataset(df, resize_mode, new_s, subtract_mean)
     sorted_sampler = SortedRandomBatchSampler(df, batch_size=4, drop_last=True)
     dataloader = DataLoader(dataset, 
                             batch_sampler=sorted_sampler, 

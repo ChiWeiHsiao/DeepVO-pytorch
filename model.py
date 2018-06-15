@@ -23,6 +23,7 @@ class DeepVO(nn.Module):
         super(DeepVO,self).__init__()
         # CNN
         self.batchNorm = batchNorm
+        self.clip = par.clip
         self.conv1   = conv(self.batchNorm,   6,   64, kernel_size=7, stride=2)
         self.conv2   = conv(self.batchNorm,  64,  128, kernel_size=5, stride=2)
         self.conv3   = conv(self.batchNorm, 128,  256, kernel_size=5, stride=2)
@@ -45,7 +46,9 @@ class DeepVO(nn.Module):
         __tmp = self.encode_image(__tmp)
 
         # RNN
-        self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), hidden_size=par.rnn_hidden_size, num_layers=2, batch_first=True)
+        self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), 
+                    hidden_size=par.rnn_hidden_size, num_layers=2, 
+                    dropout=par.dropout, batch_first=True)
         self.linear = nn.Linear(in_features=par.rnn_hidden_size, out_features=6)
 
     def forward(self, x): 
@@ -84,12 +87,16 @@ class DeepVO(nn.Module):
         # Weighted MSE Loss
         angle_loss = torch.nn.functional.mse_loss(predicted[:,:,:3], y[:,:,:3])
         translation_loss = torch.nn.functional.mse_loss(predicted[:,:,3:], y[:,:,3:])
-        loss = 100 * angle_loss + translation_loss
+        loss = (100 * angle_loss + translation_loss)
         return loss
 
     def step(self, x, y, optimizer):
         optimizer.zero_grad()
         loss = self.get_loss(x, y)
         loss.backward()
+        #for p in self.rnn.parameters():
+        #    print(float(torch.norm(p.grad.data, 2, keepdim=True).data.cpu().numpy()), end=',\t')
+        if self.clip != None:
+            torch.nn.utils.clip_grad_norm(self.rnn.parameters(), self.clip)
         optimizer.step()
         return loss
