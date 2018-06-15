@@ -109,7 +109,7 @@ for ep in range(par.epochs):
 	check_interval = 2
 	if loss_mean_valid < min_loss and ep % check_interval == 0:
 		min_loss = loss_mean_valid
-		print('Save model at ep {}, mean of valid loss: {}'.format(ep, loss_mean_valid))  # use 4.6 sec 
+		print('Save model at ep {}, mean of valid loss: {}'.format(ep+1, loss_mean_valid))  # use 4.6 sec 
 		torch.save(M_deepvo.state_dict(), par.save_model_path)
 		torch.save(optimizer.state_dict(), par.save_optimzer_path)
 	f.close()
