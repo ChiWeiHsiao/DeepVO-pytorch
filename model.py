@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from params import par
 from torch.autograd import Variable
-from torch.nn.init import kaiming_normal
+from torch.nn.init import kaiming_normal_, orthogonal_
 import numpy as np
 
 def conv(batchNorm, in_planes, out_planes, kernel_size=3, stride=1):
@@ -33,14 +33,6 @@ class DeepVO(nn.Module):
         self.conv5   = conv(self.batchNorm, 512,  512, stride=2)
         self.conv5_1 = conv(self.batchNorm, 512,  512)
         self.conv6   = conv(self.batchNorm, 512, 1024, stride=2)
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-                kaiming_normal(m.weight.data)
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
         # Comput the shape based on diff image size
         __tmp = Variable(torch.zeros(1, 6, imsize1, imsize2))
         __tmp = self.encode_image(__tmp)
@@ -50,6 +42,28 @@ class DeepVO(nn.Module):
                     hidden_size=par.rnn_hidden_size, num_layers=2, 
                     dropout=par.dropout, batch_first=True)
         self.linear = nn.Linear(in_features=par.rnn_hidden_size, out_features=6)
+
+        # Initilization
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Linear):
+                kaiming_normal_(m.weight.data)
+                if m.bias is not None:
+                    m.bias.data.zero_()
+            elif isinstance(m, nn.LSTM):
+                # layer 1
+                orthogonal_(m.weight_ih_l0)
+                kaiming_normal_(m.weight_hh_l0)
+                m.bias_ih_l0.data.zero_()
+                m.bias_hh_l0.data.zero_()
+                # layer 2
+                orthogonal_(m.weight_ih_l1)
+                kaiming_normal_(m.weight_hh_l1)
+                m.bias_ih_l1.data.zero_()
+                m.bias_hh_l1.data.zero_()
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+
 
     def forward(self, x): 
         # x: (batch, seq_len, channel, width, height)
