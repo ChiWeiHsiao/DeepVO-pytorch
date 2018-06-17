@@ -7,25 +7,11 @@ from model import DeepVO
 from data_helper import get_data_info, SortedRandomBatchSampler, ImageSequenceDataset
 
 
-M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
-use_cuda = torch.cuda.is_available()
-if use_cuda:
-    print('CUDA used.')
-    M_deepvo = M_deepvo.cuda()
-
-
-# Load FlowNet weights pretrained with FlyingChairs
-if par.pretrained_flownet and par.load_model_path == None:
-	if use_cuda:
-		pretrained_w = torch.load(par.pretrained_flownet)
-	else:
-		pretrained_w = torch.load(par.pretrained_flownet_flownet, map_location='cpu')
-	print('Load FlowNet pretrained model')
-	# Use only conv-layer-part of FlowNet as CNN for DeepVO
-	model_dict = M_deepvo.state_dict()
-	update_dict = {k: v for k, v in pretrained_w['state_dict'].items() if k in model_dict}
-	model_dict.update(update_dict)
-	M_deepvo.load_state_dict(model_dict)
+# Write all hyperparameters to record_path
+mode = 'a' if par.resume else 'w'
+with open(par.record_path, mode) as f:
+	f.write('\n'.join("%s: %s" % item for item in vars(par).items()))
+	f.write('\n'+'='*50 + '\n')
 
 
 # Prepare Data
@@ -55,6 +41,30 @@ print('Num of samples in training dataset: ', train_df.shape[0])
 print('Num of samples in validation dataset: ', valid_df.shape[0])
 
 
+# Model
+M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
+use_cuda = torch.cuda.is_available()
+if use_cuda:
+    print('CUDA used.')
+    M_deepvo = M_deepvo.cuda()
+
+
+# Load FlowNet weights pretrained with FlyingChairs
+# NOTE: the pretrained model assumes image rgb values in range [-0.5, 0.5]
+if par.pretrained_flownet and par.load_model_path == None:
+	if use_cuda:
+		pretrained_w = torch.load(par.pretrained_flownet)
+	else:
+		pretrained_w = torch.load(par.pretrained_flownet_flownet, map_location='cpu')
+	print('Load FlowNet pretrained model')
+	# Use only conv-layer-part of FlowNet as CNN for DeepVO
+	model_dict = M_deepvo.state_dict()
+	update_dict = {k: v for k, v in pretrained_w['state_dict'].items() if k in model_dict}
+	model_dict.update(update_dict)
+	M_deepvo.load_state_dict(model_dict)
+
+
+# Create optimizer
 if par.optim['opt'] == 'Adam':
 	optimizer = torch.optim.Adam(M_deepvo.parameters(), lr=0.001, betas=(0.9, 0.999))
 elif par.optim['opt'] == 'Adagrad':
@@ -64,7 +74,7 @@ elif par.optim['opt'] == 'Cosine':
 	T_iter = par.optim['T']*len(train_dl)
 	lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_iter, eta_min=0, last_epoch=-1)
 
-
+# Load trained DeepVO model and optimizer
 if par.resume:
 	M_deepvo.load_state_dict(torch.load(par.load_model_path))
 	optimizer.load_state_dict(torch.load(par.load_optimzer_path))
@@ -72,6 +82,7 @@ if par.resume:
 	print('Load optimizer from: ', par.load_optimizer_path)
 
 
+# Train
 print('Record loss in: ', par.record_path)
 min_loss_t = 1e10
 min_loss_v = 1e10

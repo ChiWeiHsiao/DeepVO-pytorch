@@ -60,12 +60,5 @@ class Parameters():
 		if not os.path.isdir(os.path.dirname(self.save_optimzer_path)):
 			os.makedirs(os.path.dirname(self.save_optimzer_path))
 
-		# Write all hyperparameters to record_path
-		p = vars(self)
-		mode = 'a' if self.resume else 'w'
-		with open(self.record_path, mode) as f:
-			f.write('\n'.join("%s: %s" % item for item in p.items()))
-			f.write('\n'+'='*50 + '\n')
-
 par = Parameters()
 
