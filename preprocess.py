@@ -5,6 +5,9 @@ import time
 from helper import R_to_angle
 from params import par
 from torchvision import transforms
+from PIL import Image
+import torch
+import math
 
 def clean_unused_images():
 	seq_frame = {'00': ['000', '004540'],
@@ -56,37 +59,61 @@ def create_pose_data():
 	print('elapsed time = {}'.format(time.time()-start_t))
 
 
-def calculate_rgb_mean(image_path_list):
+def calculate_rgb_mean_std(image_path_list, minus_point_5=False):
 	n_images = len(image_path_list)
+	cnt_pixels = 0
 	print('Numbers of frames in training dataset: {}'.format(n_images))
-
 	mean_np = [0, 0, 0]
 	mean_tensor = [0, 0, 0]
 	to_tensor = transforms.ToTensor()
 
 	image_sequence = []
-	for idx, img_path in enumerate(fpaths):
+	for idx, img_path in enumerate(image_path_list):
 		print('{} / {}'.format(idx, n_images), end='\r')
 		img_as_img = Image.open(img_path)
 		img_as_tensor = to_tensor(img_as_img)
+		if minus_point_5:
+			img_as_tensor = img_as_tensor - 0.5
+		img_as_np = np.array(img_as_img)
+		img_as_np = np.rollaxis(img_as_np, 2, 0)
+		cnt_pixels += img_as_np.shape[1]*img_as_np.shape[2]
+		for c in range(3):
+			mean_tensor[c] += float(torch.sum(img_as_tensor[c]))
+			mean_np[c] += float(np.sum(img_as_np[c]))
+	mean_tensor =  [v / cnt_pixels for v in mean_tensor]
+	mean_np = [v / cnt_pixels for v in mean_np]
+	print('mean_tensor = ', mean_tensor)
+	print('mean_np = ', mean_np)
+
+	std_tensor = [0, 0, 0]
+	std_np = [0, 0, 0]
+	for idx, img_path in enumerate(image_path_list):
+		print('{} / {}'.format(idx, n_images), end='\r')
+		img_as_img = Image.open(img_path)
+		img_as_tensor = to_tensor(img_as_img)
+		if minus_point_5:
+			img_as_tensor = img_as_tensor - 0.5
 		img_as_np = np.array(img_as_img)
 		img_as_np = np.rollaxis(img_as_np, 2, 0)
 		for c in range(3):
-			mean_tensor[c] += torch.mean(img_as_tensor[c])
-			mean_np[c] += np.mean(img_as_np[c])
-	print('mean_tensor = ', mean_tensor)
-	print('mean_np = ', mean_np)
-	
+			tmp = (img_as_tensor[c] - mean_tensor[c])**2
+			std_tensor[c] += float(torch.sum(tmp))
+			tmp = (img_as_np[c] - mean_np[c])**2
+			std_np[c] += float(np.sum(tmp))
+	std_tensor = [math.sqrt(v / cnt_pixels) for v in std_tensor]
+	std_np = [math.sqrt(v / cnt_pixels) for v in std_np]
+	print('std_tensor = ', std_tensor)
+	print('std_np = ', std_np)
 
 
 if __name__ == '__main__':
-	clean_unused_images()
-	create_pose_data()
+	#clean_unused_images()
+	#create_pose_data()
 	
 	# Calculate RGB means of images in training videos
-	train_video = ['00', '02', '08', '09']
+	train_video = ['00', '02', '08', '09', '06', '04', '10']
 	image_path_list = []
 	for folder in train_video:
-		image_path_list += glob.glob('images/{}/*.png'.format(folder))
-	calculate_rgb_mean(image_path_list)
+		image_path_list += glob.glob('KITTI/images/{}/*.png'.format(folder))
+	calculate_rgb_mean_std(image_path_list, minus_point_5=True)
 
