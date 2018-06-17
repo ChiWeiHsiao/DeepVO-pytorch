@@ -6,33 +6,43 @@ class Parameters():
 		# Path
 		self.image_dir = '/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/images/'
 		self.pose_dir = '/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/pose_GT/'
-		self.train_video = ['00', '02', '08', '09']  # 09
-		self.valid_video = ['06', '05']  #07 09
+		self.train_video = ['00', '02', '08', '09', '01', '04', '05', '06', '07', '10']  # 09
+		self.valid_video = []
+		self.partition = 0.7   # None # partition videos in 'train_video' to train / valid dataset
 
 		# Data Preprocessing
-		self.resize_mode = 'crop' # 'rescale' None
-		self.img_w = 1200  # 608  613  1226  1200
-		self.img_h = 360  # 184  185  370   360
-		self.subtract_means = [89.87475578450945/255, 94.48404712783562/255, 92.50648653696369/255]  # caculated with video 00, 02, 08, 09
-		self.seq_len = [5, 5]  # [8, 10]
-		self.sample_interval = 2  # None (only for fixed seq_len)
+		self.resize_mode = 'rescale' # 'crop' 'rescale' None
+		self.img_w = 608  # 608  613  1226  1024 896
+		self.img_h = 184  # 184  185  370   312 272
+		self.img_means = (-0.14968217427134656, -0.12941663107068363, -0.1320610301921484)  #(0,0,0)
+		self.img_stds = (1, 1, 1)  #(0.309122, 0.315710, 0.3226514)  #(1, 1, 1) 
+		self.minus_point_5 = True
+		#(1,1,1)
+		#(0.31934219855028534, 0.3220230463601085, 0.32343616609004483)
+		#(81.43226016669172, 82.11587565987408, 82.47622141551435)
+		self.seq_len = [7, 9]  # [8, 10]
+		self.sample_times = 3  # 1
 
 		# Model
-		self.rnn_hidden_size = 500  # 1000 500
-		self.dropout = 0.5  # 0: no dropout
+		self.rnn_hidden_size = 1000  # 1000 500
+		#self.conv_dropout = 0.3
+		self.rnn_dropout_in = 0.5
+		self.rnn_dropout_out = 0.5
+		self.rnn_dropout_between = 0.5  # 0: no dropout
 		self.clip = None # 5
 		self.batch_norm = True
 		# Training
-		self.batch_size = 4  # 64 8 128
-		self.pin_mem = False
-		self.epochs = 200
-		self.optim = {'opt': 'Adam'}
+		self.batch_size = 16 # 64 8 128
+		self.pin_mem = True
+		self.epochs = 100
+		self.optim = {'opt': 'Adagrad', 'lr': 0.001}
 					# {'opt': 'Adagrad', 'lr': 0.001}
 					# {'opt': 'Adam'}
 					# {'opt': 'Cosine', 'T': 100 , 'lr': 0.001}
 		
 		# Pretrain, Retrain
 		self.pretrained_flownet = None
+								# None
 								# './pretrained/flownets_bn_EPE2.459.pth.tar'  
 								# './pretrained/flownets_EPE1.951.pth.tar'
 		self.resume = False

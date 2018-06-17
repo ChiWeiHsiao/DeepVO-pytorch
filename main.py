@@ -29,16 +29,30 @@ if par.pretrained_flownet and par.load_model_path == None:
 
 
 # Prepare Data
-train_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_interval=par.sample_interval)
+if par.partition != None:
+	all_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times, shuffle=True, sort=False)
+	all_len = len(all_df.index)
+	partition = par.partition
+	train_df = all_df[:int(all_len*partition)]
+	train_df = train_df.sort_values(by=['seq_len'], ascending=False)
+	valid_df = all_df[int(all_len*partition):]
+	valid_df = valid_df.sort_values(by=['seq_len'], ascending=False)
+else:
+	train_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)	
+	valid_df = get_data_info(folder_list=par.valid_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)
+
 train_sampler = SortedRandomBatchSampler(train_df, par.batch_size, drop_last=True)
-train_dataset = ImageSequenceDataset(train_df, par.resize_mode, (par.img_w, par.img_h), par.subtract_means)
+train_dataset = ImageSequenceDataset(train_df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
 train_dl = DataLoader(train_dataset, batch_sampler=train_sampler, num_workers=par.n_processors, pin_memory=par.pin_mem)
 
-valid_df = get_data_info(folder_list=par.valid_video, seq_len_range=par.seq_len, overlap=1, sample_interval=None)
 valid_sampler = SortedRandomBatchSampler(valid_df, par.batch_size, drop_last=True)
-valid_dataset = ImageSequenceDataset(valid_df, par.resize_mode, (par.img_w, par.img_h), par.subtract_means)
+valid_dataset = ImageSequenceDataset(valid_df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
 valid_dl = DataLoader(valid_dataset, batch_sampler=valid_sampler, num_workers=par.n_processors, pin_memory=par.pin_mem)
 
+train_df.to_csv('train_df.csv')
+valid_df.to_csv('valid_df.csv')
+print('Num of samples in training dataset: ', train_df.shape[0])
+print('Num of samples in validation dataset: ', valid_df.shape[0])
 
 
 if par.optim['opt'] == 'Adam':
@@ -59,10 +73,13 @@ if par.resume:
 
 
 print('Record loss in: ', par.record_path)
-min_loss = 1e10
+min_loss_t = 1e10
+min_loss_v = 1e10
+before_train = True  # debug
 M_deepvo.train()
 for ep in range(par.epochs):
 	st_t = time.time()
+	print('='*50)
 	M_deepvo.train()
 	loss_mean = 0
 	t_loss_list = []
@@ -70,16 +87,20 @@ for ep in range(par.epochs):
 		if use_cuda:
 			t_x = t_x.cuda(non_blocking=par.pin_mem)
 			t_y = t_y.cuda(non_blocking=par.pin_mem)
+		if before_train:
+			before_train = False
+			print('\nDebug')
+			print('Prediction before training')
+			print('Predicted: ', M_deepvo.forward(t_x).data.cpu().numpy()[0])
+			print('Target   :', t_y.cpu().numpy()[0])
+			print('\n')
 		ls = M_deepvo.step(t_x, t_y, optimizer).data.cpu().numpy()
 		t_loss_list.append(float(ls))
 		loss_mean += float(ls)
 		if par.optim == 'Cosine':
 			lr_scheduler.step()
-	print('Train loss:')
-	print('{:.1f} sec'.format(time.time()-st_t))
-	print('train stddev = {:.2f}\n'.format(np.std(t_loss_list)))
-	print(t_loss_list)
-	print('\n\n')
+	print('Train take {:.1f} sec'.format(time.time()-st_t))
+	#print(t_loss_list)
 	loss_mean /= len(train_dl)
 
 	st_t = time.time()
@@ -93,24 +114,26 @@ for ep in range(par.epochs):
 		v_ls = M_deepvo.get_loss(v_x, v_y).data.cpu().numpy()
 		v_loss_list.append(float(v_ls))
 		loss_mean_valid += float(v_ls)
-	print('Valid loss:')
-	print('{:.1f} sec'.format(time.time()-st_t))
-	print('valid stddev = {:.2f}\n'.format(np.std(v_loss_list)))
-	print(v_loss_list)
-	print('\n\n')
+	print('Valid take {:.1f} sec'.format(time.time()-st_t))
+	#print(v_loss_list)
 	loss_mean_valid /= len(valid_dl)
 
 	f = open(par.record_path, 'a')
 	f.write('Epoch {}\ntrain loss mean: {}, std: {:.2f}\nvalid loss mean: {}, std: {:.2f}\n\n'.format(ep+1, loss_mean, np.std(t_loss_list), loss_mean_valid, np.std(v_loss_list)))
-	print('Epoch {}\ntrain loss mean: {}\nvalid loss mean: {}\n\n'.format(ep+1, loss_mean, loss_mean_valid))
-	print('='*50)
+	print('Epoch {}\ntrain loss mean: {}, std: {:.2f}\nvalid loss mean: {}, std: {:.2f}\n\n'.format(ep+1, loss_mean, np.std(t_loss_list), loss_mean_valid, np.std(v_loss_list)))
 
 	# Save model
-	check_interval = 2
-	if loss_mean_valid < min_loss and ep % check_interval == 0:
-		min_loss = loss_mean_valid
+	check_interval = 1
+	if loss_mean_valid < min_loss_v and ep % check_interval == 0:
+		min_loss_v = loss_mean_valid
 		print('Save model at ep {}, mean of valid loss: {}'.format(ep+1, loss_mean_valid))  # use 4.6 sec 
-		torch.save(M_deepvo.state_dict(), par.save_model_path)
-		torch.save(optimizer.state_dict(), par.save_optimzer_path)
-	f.close()
+		torch.save(M_deepvo.state_dict(), par.save_model_path+'.valid')
+		torch.save(optimizer.state_dict(), par.save_optimzer_path+'.valid')
 
+	check_interval = 1
+	if loss_mean < min_loss_t and ep % check_interval == 0:
+		min_loss_t = loss_mean
+		print('Save model at ep {}, mean of train loss: {}'.format(ep+1, loss_mean))
+		torch.save(M_deepvo.state_dict(), par.save_model_path+'.train')
+		torch.save(optimizer.state_dict(), par.save_optimzer_path+'.train')
+	f.close()
