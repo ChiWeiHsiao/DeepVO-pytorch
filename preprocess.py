@@ -107,8 +107,8 @@ def calculate_rgb_mean_std(image_path_list, minus_point_5=False):
 
 
 if __name__ == '__main__':
-	#clean_unused_images()
-	#create_pose_data()
+	clean_unused_images()
+	create_pose_data()
 	
 	# Calculate RGB means of images in training videos
 	train_video = ['00', '02', '08', '09', '06', '04', '10']
