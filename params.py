@@ -25,8 +25,8 @@ class Parameters():
 		self.sample_times = 3  # 1
 
 		# Data info path
-		self.train_data_info_path = 'datainfo/train_df_t{}_v{}_p{}_s{}x{}_stimes{}.csv'.format(''.join(self.train_video), ''.join(self.valid_video), self.partition, self.seq_len[0], self.seq_len[1], self.sample_times)
-		self.valid_data_info_path = 'datainfo/valid_df_t{}_v{}_p{}_s{}x{}_stimes{}.csv'.format(''.join(self.train_video), ''.join(self.valid_video), self.partition, self.seq_len[0], self.seq_len[1], self.sample_times)
+		self.train_data_info_path = 'datainfo/train_df_t{}_v{}_p{}_seq{}x{}_sample{}.pickle'.format(''.join(self.train_video), ''.join(self.valid_video), self.partition, self.seq_len[0], self.seq_len[1], self.sample_times)
+		self.valid_data_info_path = 'datainfo/valid_df_t{}_v{}_p{}_seq{}x{}_sample{}.pickle'.format(''.join(self.train_video), ''.join(self.valid_video), self.partition, self.seq_len[0], self.seq_len[1], self.sample_times)
 
 
 		# Model

@@ -36,11 +36,11 @@ def get_data_info(folder_list, seq_len_range, overlap, sample_times=1, pad_y=Fal
                 if res != 0:
                     n_frames = n_frames - res
                 x_segs = [fpaths[i:i+seq_len] for i in range(st, n_frames, jump)]
-                if len(x_segs[-1]) < seq_len:
-                    x_segs = x_segs[:-1]
+                #if len(x_segs[-1]) < seq_len:
+                #    x_segs = x_segs[:-1]
                 y_segs = [poses[i:i+seq_len] for i in range(st, n_frames, jump)]
-                if len(y_segs[-1]) < seq_len:
-                    y_segs = y_segs[:-1]
+                #if len(y_segs[-1]) < seq_len:
+                #    y_segs = y_segs[:-1]
                 Y += y_segs
                 X_path += x_segs
                 X_len += [len(xs) for xs in x_segs]
