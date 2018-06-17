@@ -3,28 +3,48 @@ import numpy as np
 import time
 
 def plot_route(gt, out):
-	x = [[v for v in gt[:, -3]]]
-	y = [[v for v in gt[:, -1]]]
+	x_idx = 3
+	y_idx = 5
+	step = 30
+
+	x = [v for v in gt[:, x_idx]]
+	y = [v for v in gt[:, y_idx]]
+	for i in range(0, len(x), step):
+		plt.plot(x[i:i+step], y[i:i+step], color='k', ls='--')
+		plt.scatter(x[i], y[i], s=6, color='g')
+
+	x = [v for v in out[:, x_idx]]
+	y = [v for v in out[:, y_idx]]
+	for i in range(0, len(x), step):
+		plt.plot(x[i:i+step], y[i:i+step], color=[0, 0, 1, 0.5])
+		plt.scatter(x[i], y[i], s=6, color='b')
+	plt.gca().set_aspect('equal', adjustable='datalim')
+
+	'''
+	x = [[v for v in gt[:, x_idx]]]
+	y = [[v for v in gt[:, y_idx]]]
 	for i in range(len(x)):
-		plt.plot(x[i], y[i], color='k')
+		plt.plot(x[i], y[i], color='k', ls='--')
 		#plt.scatter(x[i], y[i], color='y')
 
-	x = [[v for v in out[:, -3]]]
-	y = [[v for v in out[:, -1]]]
+	x = [[v for v in out[:, x_idx]]]
+	y = [[v for v in out[:, y_idx]]]
 	for i in range(len(x)):
-		plt.plot(x[i], y[i], color='r')
-		#plt.scatter(x[i], y[i], color='b')
+		plt.plot(x[i], y[i], color=[0, 0, 1, 0.7])
+		#plt.scatter(x[i], y[i], color='r')
+	'''
 
 
 # Load in GT and predicted pose
-video = '09'  # 01 04 10
+video = '05'
+pose_GT_dir = 'KITTI/pose_GT/'
+result_dir = 'result/'
 overfit =  '' #'overfit_' #''
 print('Testing video {}'.format(video))
 
-GT_pose_path = '{}{}.npy'.format(par.pose_dir, video)  #'KITTI/pose_GT/{}.npy'.format(video)
+GT_pose_path = '{}{}.npy'.format(pose_GT_dir, video)
 gt = np.load(GT_pose_path)
-pose_result_path = 'result/{}out_{}.txt'.format(overfit, video)
-#pose_result_path = 'result/out_{}.txt'.format(video)
+pose_result_path = '{}{}out_{}.txt'.format(result_dir, overfit, video)
 with open(pose_result_path) as f_out:
 	out = [l.split('\n')[0] for l in f_out.readlines()]
 	#gt, out = gt[ignore_first:], out[ignore_first:]
@@ -33,22 +53,14 @@ with open(pose_result_path) as f_out:
 	out = np.array(out)
 	print('out shape', out.shape)
 	print('gt shape', gt.shape)
-	for i in range(0, 5):
+	# show some of result
+	for i in range(100, 105):
 		print('==========')
 		print('out: ', out[i][-3], out[i][-1])
 		print('gt:  ', gt[i][-3], gt[i][-1])
 
 
+
 plot_route(gt, out)
 plt.title('Video {}'.format(video))
-plt.savefig('{}route_video_{}.png'.format(overfit, video))
-
-'''
-rs = [[i, i+400] for i in range(0, 700, 100)]
-for r in rs:
-	plot_route(gt[r[0]:r[1]], out[r[0]:r[1]])
-	plt.title('%d - %d' %(r[0], r[1]))
-	plt.savefig('{}_{}~{}.png'.format(video, r[0], r[1]))
-	#input('Current %d %d,  Press to continue...\n' %(r[0], r[1]))
-	plt.clf()
-'''
+plt.savefig('{}{}route_video_{}.png'.format(result_dir, overfit, video))

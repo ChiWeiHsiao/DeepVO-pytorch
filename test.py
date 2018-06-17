@@ -1,3 +1,4 @@
+# predicted as a batch
 from params import par
 from model import DeepVO
 import numpy as np
@@ -6,81 +7,111 @@ import glob
 import os
 import time
 import torch
-import torch.utils.data as Data
+from data_helper import get_data_info, ImageSequenceDataset
+from torch.utils.data import DataLoader
 
-
-# Model
-M_deepvo = DeepVO(par.img_h, par.img_w)
-M_deepvo.load_state_dict(torch.load(par.load_model_path))
-print('Load model from: ', par.load_model_path)
-
-M_deepvo.eval()
-
+# Load model
+M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
+load_model_path = par.load_model_path #+ '.valid' + '.ep27'
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     M_deepvo = M_deepvo.cuda()
+    M_deepvo.load_state_dict(torch.load(load_model_path))
+else:
+    M_deepvo.load_state_dict(torch.load(load_model_path, map_location={'cuda:0': 'cpu'}))
+print('Load model from: ', load_model_path)
 
-video = '07' #  07 10 01 04 
-fnames = glob.glob('{}{}/*.png'.format(par.image_dir, video))  #unorderd
-fnames.sort()
-Y = np.load('{}{}.npy'.format(par.pose_dir, video))
-x_seq = []
 
-seq_len = par.seq_len[0]
-has_predict = False
-answer = [[0.0]*6, ]
-for i, fn in enumerate(fnames):
-    im = Image.open(fn)
-    if im.size != (par.img_w, par.img_h):
-        im = im.resize((par.img_w, par.img_h), Image.ANTIALIAS)
-    im = np.array(im)  #, dtype=float)  # (h, w, c)
-    im = np.rollaxis(im, 2, 0)  #(c, h, w)
-    im = np.expand_dims(im, axis=0)  #(1, c, h, w)
-    
-    #x_seq = im if x_seq == [] else np.concatenate((x_seq, im), axis=0)
-    assert(len(x_seq) <= seq_len)
-    if x_seq == []:
-        x_seq = im
-    else:
-        if not has_predict:
-            x_seq = np.concatenate((x_seq, im), axis=0)
-        else:
-            x_seq[:-1] = x_seq[1:]
-            x_seq[-1] = im
 
-        if len(x_seq) == seq_len:
-            # Predict
-            x = torch.from_numpy(np.expand_dims(x_seq, axis=0))
-            x = x.type(torch.FloatTensor)
-            # preprocess, subtrac by RGB mean
-            for c in range(3):
-                x[:,:,c] -= par.subtract_means[c]
+# Data
+test_video_list = ['04', '05', '07', '10', '09']
+n_workers = 1
+seq_len = int((par.seq_len[0]+par.seq_len[1])/2)
+overlap = seq_len - 1
+print('seq_len = {},  overlap = {}'.format(seq_len, overlap))
+batch_size = par.batch_size
 
-            if use_cuda:
-                x = x.cuda()
+for test_video in test_video_list:
+    df = get_data_info(folder_list=[test_video], seq_len_range=[seq_len, seq_len], overlap=overlap, sample_times=1, shuffle=False, sort=False)
+    df = df.loc[df.seq_len == seq_len]  # drop last
+    dataset = ImageSequenceDataset(df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
+    df.to_csv('test_df.csv')
+    dataloader = DataLoader(
+                    dataset, 
+                    batch_size=batch_size,
+                    shuffle=False, 
+                    num_workers=n_workers)
+    gt_pose = np.load('{}{}.npy'.format(par.pose_dir, test_video))  # (n_images, 6)
 
-            predict = M_deepvo.forward(x)
-            predict = predict.data.cpu().numpy()[0]  # only 1 in batch
-            if not has_predict:
-                for pose in predict:
-                    answer.append([float(v) for v in pose])
-                has_predict = True
+    # Predict
+    M_deepvo.eval()
+    has_predict = False
+    answer = [[0.0]*6, ]
+    st_t = time.time()
+    n_batch = len(dataloader)
+    mse_loss = 0
+    for i, batch in enumerate(dataloader):
+        print('{} / {}'.format(i, n_batch), end='\r', flush=True)
+        _, x, y = batch
+        if use_cuda:
+            x = x.cuda()
+            y = y.cuda()
+        batch_predict_pose = M_deepvo.forward(x)
+
+        # Calculate Loss
+        y = y[:, 1:, :]
+        angle_loss = torch.nn.functional.mse_loss(batch_predict_pose[:, :,:3], y[:, :,:3])
+        translation_loss = torch.nn.functional.mse_loss(batch_predict_pose[:, :,3:], y[:, :,3:])
+        loss = (100 * angle_loss + translation_loss)
+        mse_loss += float(loss)
+
+        # Record answer
+        batch_predict_pose = batch_predict_pose.data.cpu().numpy()
+        #predict_pose_seq = predict_pose_seq.data.cpu().numpy()[0]  # only 1 in batch
+        if i == 0:
+            for pose in batch_predict_pose[0]:
+                # use all predicted pose in the first prediction
+                for i in range(len(pose)):
+                    # Convert predicted relative pose to absolute pose by adding last pose
+                    #pose[i] += gt_pose[len(answer)-1][i]
+                    pose[i] += answer[-1][i]
+                answer.append(pose.tolist())
+            batch_predict_pose = batch_predict_pose[1:]
+
+        for predict_pose_seq in batch_predict_pose:
+        # use only last predicted pose in the following prediction
+            last_pose = predict_pose_seq[-1]
+            for i in range(len(last_pose)):
+                last_pose[i] += answer[-1][i]
+                #last_pose[i] += gt_pose[len(answer)-1][i]
+            answer.append(last_pose.tolist())
+    print('len(answer): ', len(answer))
+    print('expect len: ', len(glob.glob('{}{}/*.png'.format(par.image_dir, test_video))))
+    print('Predict use {} sec'.format(time.time() - st_t))
+    print('MSE loss = ', mse_loss / n_batch)
+
+
+    # Save answer
+    save_dir = 'result/'
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    with open('{}out_{}.txt'.format(save_dir, test_video), 'w') as f:
+        for pose in answer:
+            if type(pose) == list:
+                f.write(', '.join([str(p) for p in pose]))
             else:
-                answer.append([float(v) for v in predict[-1]])  #if i >= seq_len-1
-            x_seq[:-1] = x_seq[1:]
-        print(answer[-1])
-        
+                f.write(str(pose))
+            f.write('\n')
 
-print('len(answer): ', len(answer)-1)
-print('expect len: ', len(fnames)-1)
 
-save_dir = 'result/'
-if not os.path.exists(save_dir):
-    os.makedirs(save_dir)
-with open('{}out_{}.txt'.format(save_dir, video), 'w') as f:
-    for pose in answer:
-        if type(pose) == list:
-            f.write(', '.join([str(p) for p in pose]))
-        else:
-            f.write(str(pose))
-        f.write('\n')
+    # Calculate loss
+    gt_pose = np.load('{}{}.npy'.format(par.pose_dir, test_video))  # (n_images, 6)
+    loss = 0
+    for t in range(len(gt_pose)):
+        angle_loss = np.sum((answer[t][:3] - gt_pose[t,:3]) ** 2)
+        translation_loss = np.sum((answer[t][3:] - gt_pose[t,3:]) ** 2)
+        loss = (100 * angle_loss + translation_loss)
+    loss /= len(gt_pose)
+    print('Loss = ', loss)
+    print('='*50)
