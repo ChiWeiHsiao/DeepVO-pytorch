@@ -1,7 +1,9 @@
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
+import os
 import time
+import pandas as pd
 from params import par
 from model import DeepVO
 from data_helper import get_data_info, SortedRandomBatchSampler, ImageSequenceDataset
@@ -13,19 +15,27 @@ with open(par.record_path, mode) as f:
 	f.write('\n'.join("%s: %s" % item for item in vars(par).items()))
 	f.write('\n'+'='*50 + '\n')
 
-
 # Prepare Data
-if par.partition != None:
-	all_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times, shuffle=True, sort=False)
-	all_len = len(all_df.index)
-	partition = par.partition
-	train_df = all_df[:int(all_len*partition)]
-	train_df = train_df.sort_values(by=['seq_len'], ascending=False)
-	valid_df = all_df[int(all_len*partition):]
-	valid_df = valid_df.sort_values(by=['seq_len'], ascending=False)
+if os.path.isfile(par.train_data_info_path) and os.path.isfile(par.valid_data_info_path):
+	print('Load data info from {}'.format(par.train_video))
+	train_df = pd.read_csv(par.train_data_info_path, index_col=0)
+	valid_df = pd.read_csv(par.valid_data_info_path, index_col=0)
 else:
-	train_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)	
-	valid_df = get_data_info(folder_list=par.valid_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)
+	print('Create new data info')
+	if par.partition != None:
+		all_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times, shuffle=True, sort=False)
+		all_len = len(all_df.index)
+		partition = par.partition
+		train_df = all_df[:int(all_len*partition)]
+		train_df = train_df.sort_values(by=['seq_len'], ascending=False)
+		valid_df = all_df[int(all_len*partition):]
+		valid_df = valid_df.sort_values(by=['seq_len'], ascending=False)
+	else:
+		train_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)	
+		valid_df = get_data_info(folder_list=par.valid_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)
+	# save
+	train_df.to_csv(par.train_data_info_path)
+	valid_df.to_csv(par.valid_data_info_path)
 
 train_sampler = SortedRandomBatchSampler(train_df, par.batch_size, drop_last=True)
 train_dataset = ImageSequenceDataset(train_df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
@@ -35,8 +45,6 @@ valid_sampler = SortedRandomBatchSampler(valid_df, par.batch_size, drop_last=Tru
 valid_dataset = ImageSequenceDataset(valid_df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
 valid_dl = DataLoader(valid_dataset, batch_sampler=valid_sampler, num_workers=par.n_processors, pin_memory=par.pin_mem)
 
-train_df.to_csv('train_df.csv')
-valid_df.to_csv('valid_df.csv')
 print('Num of samples in training dataset: ', train_df.shape[0])
 print('Num of samples in validation dataset: ', valid_df.shape[0])
 
@@ -77,7 +85,7 @@ elif par.optim['opt'] == 'Cosine':
 # Load trained DeepVO model and optimizer
 if par.resume:
 	M_deepvo.load_state_dict(torch.load(par.load_model_path))
-	optimizer.load_state_dict(torch.load(par.load_optimzer_path))
+	optimizer.load_state_dict(torch.load(par.load_optimizer_path))
 	print('Load model from: ', par.load_model_path)
 	print('Load optimizer from: ', par.load_optimizer_path)
 
