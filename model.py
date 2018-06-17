@@ -38,9 +38,14 @@ class DeepVO(nn.Module):
         __tmp = self.encode_image(__tmp)
 
         # RNN
-        self.rnn = nn.LSTM(input_size=int(np.prod(__tmp.size())), 
-                    hidden_size=par.rnn_hidden_size, num_layers=2, 
-                    dropout=par.dropout, batch_first=True)
+        self.rnn_drop_in = nn.Dropout(par.rnn_dropout_in)
+        self.rnn = nn.LSTM(
+                    input_size=int(np.prod(__tmp.size())), 
+                    hidden_size=par.rnn_hidden_size, 
+                    num_layers=2, 
+                    dropout=par.rnn_dropout_between, 
+                    batch_first=True)
+        self.rnn_drop_out = nn.Dropout(par.rnn_dropout_out)
         self.linear = nn.Linear(in_features=par.rnn_hidden_size, out_features=6)
 
         # Initilization
@@ -51,12 +56,14 @@ class DeepVO(nn.Module):
                     m.bias.data.zero_()
             elif isinstance(m, nn.LSTM):
                 # layer 1
-                orthogonal_(m.weight_ih_l0)
+                #orthogonal_(m.weight_ih_l0)
+                kaiming_normal_(m.weight_ih_l0)
                 kaiming_normal_(m.weight_hh_l0)
                 m.bias_ih_l0.data.zero_()
                 m.bias_hh_l0.data.zero_()
                 # layer 2
-                orthogonal_(m.weight_ih_l1)
+                #orthogonal_(m.weight_ih_l1)
+                kaiming_normal_(m.weight_ih_l1)
                 kaiming_normal_(m.weight_hh_l1)
                 m.bias_ih_l1.data.zero_()
                 m.bias_hh_l1.data.zero_()
@@ -76,7 +83,9 @@ class DeepVO(nn.Module):
         x = self.encode_image(x)
         flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))        
         # RNN
+        flatten = self.rnn_drop_in(flatten)
         out, hc = self.rnn(flatten)
+        out = self.rnn_drop_out(out)
         out = self.linear(out)
         return out
         
@@ -108,8 +117,6 @@ class DeepVO(nn.Module):
         optimizer.zero_grad()
         loss = self.get_loss(x, y)
         loss.backward()
-        #for p in self.rnn.parameters():
-        #    print(float(torch.norm(p.grad.data, 2, keepdim=True).data.cpu().numpy()), end=',\t')
         if self.clip != None:
             torch.nn.utils.clip_grad_norm(self.rnn.parameters(), self.clip)
         optimizer.step()
