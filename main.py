@@ -7,7 +7,7 @@ import pandas as pd
 from ast import literal_eval
 from params import par
 from model import DeepVO
-from data_helper import get_data_info, SortedRandomBatchSampler, ImageSequenceDataset
+from data_helper import get_data_info, SortedRandomBatchSampler, ImageSequenceDataset, get_partition_data_info
 
 
 # Write all hyperparameters to record_path
@@ -19,24 +19,29 @@ with open(par.record_path, mode) as f:
 # Prepare Data
 if os.path.isfile(par.train_data_info_path) and os.path.isfile(par.valid_data_info_path):
 	print('Load data info from {}'.format(par.train_data_info_path))
-	train_df = pd.read_pickle(par.train_data_info_path, index_col=0, converters={'image_path': literal_eval})
-	valid_df = pd.read_pickle(par.valid_data_info_path, index_col=0, converters={'image_path': literal_eval})
+	train_df = pd.read_pickle(par.train_data_info_path)
+	valid_df = pd.read_pickle(par.valid_data_info_path)
 else:
 	print('Create new data info')
 	if par.partition != None:
-		all_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times, shuffle=True, sort=False)
-		all_len = len(all_df.index)
 		partition = par.partition
-		train_df = all_df[:int(all_len*partition)]
-		train_df = train_df.sort_values(by=['seq_len'], ascending=False)
-		valid_df = all_df[int(all_len*partition):]
-		valid_df = valid_df.sort_values(by=['seq_len'], ascending=False)
+		train_df, valid_df = get_partition_data_info(partition, par.train_video, par.seq_len, overlap=1, sample_times=par.sample_times, shuffle=True, sort=True)
+		#all_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times, shuffle=True, sort=False)
+		#all_len = len(all_df.index)
+		#train_df = all_df[:int(all_len*partition)]
+		#train_df = train_df.sort_values(by=['seq_len'], ascending=False)
+		#valid_df = all_df[int(all_len*partition):]
+		#valid_df = valid_df.sort_values(by=['seq_len'], ascending=False)
 	else:
 		train_df = get_data_info(folder_list=par.train_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)	
 		valid_df = get_data_info(folder_list=par.valid_video, seq_len_range=par.seq_len, overlap=1, sample_times=par.sample_times)
 	# save
 	train_df.to_pickle(par.train_data_info_path)
 	valid_df.to_pickle(par.valid_data_info_path)
+print('='*50)
+print('Number of samples in training dataset: ', len(train_df.index))
+print('Number of samples in validation dataset: ', len(valid_df.index))
+print('='*50)
 
 train_sampler = SortedRandomBatchSampler(train_df, par.batch_size, drop_last=True)
 train_dataset = ImageSequenceDataset(train_df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
@@ -45,9 +50,6 @@ train_dl = DataLoader(train_dataset, batch_sampler=train_sampler, num_workers=pa
 valid_sampler = SortedRandomBatchSampler(valid_df, par.batch_size, drop_last=True)
 valid_dataset = ImageSequenceDataset(valid_df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
 valid_dl = DataLoader(valid_dataset, batch_sampler=valid_sampler, num_workers=par.n_processors, pin_memory=par.pin_mem)
-
-print('Num of samples in training dataset: ', train_df.shape[0])
-print('Num of samples in validation dataset: ', valid_df.shape[0])
 
 
 # Model
@@ -60,7 +62,7 @@ if use_cuda:
 
 # Load FlowNet weights pretrained with FlyingChairs
 # NOTE: the pretrained model assumes image rgb values in range [-0.5, 0.5]
-if par.pretrained_flownet and par.load_model_path == None:
+if par.pretrained_flownet and not par.resume:
 	if use_cuda:
 		pretrained_w = torch.load(par.pretrained_flownet)
 	else:

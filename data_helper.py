@@ -81,6 +81,69 @@ def get_data_info(folder_list, seq_len_range, overlap, sample_times=1, pad_y=Fal
     return df
 
 
+def get_partition_data_info(partition, folder_list, seq_len_range, overlap, sample_times=1, pad_y=False, shuffle=False, sort=True):
+    X_path = [[], []]
+    Y = [[], []]
+    X_len = [[], []]
+    df_list = []
+
+    for part in range(2):
+        for folder in folder_list:
+            start_t = time.time()
+            poses = np.load('{}{}.npy'.format(par.pose_dir, folder))  # (n_images, 6)
+            fpaths = glob.glob('{}{}/*.png'.format(par.image_dir, folder))
+            fpaths.sort()
+
+            split = int(partition*len(fpaths))
+            if part == 0:
+                fpaths = fpaths[:split]
+                poses = poses[:split]
+            else:
+                fpaths = fpaths[split:]
+                poses = poses[split:]
+
+            #st = part*split
+            #ed = min(part*split+split, len(fpaths))
+            #fpaths = fpaths[st:ed]
+            #poses = poses[st:ed]
+
+            # Random Segment
+            assert(overlap < min(seq_len_range))
+            n_frames = len(fpaths)
+            min_len, max_len = seq_len_range[0], seq_len_range[1]
+            for i in range(sample_times):
+                start = 0
+                while True:
+                    n = np.random.random_integers(min_len, max_len)
+                    if start + n < n_frames:
+                        x_seg = fpaths[start:start+n] 
+                        X_path[part].append(x_seg)
+                        if not pad_y:
+                            Y[part].append(poses[start:start+n])
+                        else:
+                            pad_zero = np.zeros((max_len-n, 6))
+                            padded = np.concatenate((poses[start:start+n], pad_zero))
+                            Y[part].append(padded.tolist())
+                    else:
+                        print('Last %d frames is not used' %(start+n-n_frames))
+                        break
+                    start += n - overlap
+                    X_len[part].append(len(x_seg))
+            print('Folder {} finish in {} sec'.format(folder, time.time()-start_t))
+        
+        # Convert to pandas dataframes
+        data = {'seq_len': X_len[part], 'image_path': X_path[part], 'pose': Y[part]}
+        df = pd.DataFrame(data, columns = ['seq_len', 'image_path', 'pose'])
+        # Shuffle through all videos
+        if shuffle:
+            df = df.sample(frac=1)
+        # Sort dataframe by seq_len
+        if sort:
+            df = df.sort_values(by=['seq_len'], ascending=False)
+        df_list.append(df)
+    return df_list
+
+
 class SortedRandomBatchSampler(Sampler):
     def __init__(self, info_dataframe, batch_size, drop_last=False):
         self.df = info_dataframe
