@@ -94,18 +94,18 @@ def get_partition_data_info(partition, folder_list, seq_len_range, overlap, samp
             fpaths = glob.glob('{}{}/*.png'.format(par.image_dir, folder))
             fpaths.sort()
 
-            split = int(partition*len(fpaths))
-            if part == 0:
-                fpaths = fpaths[:split]
-                poses = poses[:split]
-            else:
-                fpaths = fpaths[split:]
-                poses = poses[split:]
 
-            #st = part*split
-            #ed = min(part*split+split, len(fpaths))
-            #fpaths = fpaths[st:ed]
-            #poses = poses[st:ed]
+            # Get the middle section as validation set
+            n_val = int((1-partition)*len(fpaths))
+            st_val = int((len(fpaths)-n_val)/2)
+            ed_val = st_val + n_val
+            print('st_val: {}, ed_val:{}'.format(st_val, ed_val))
+            if part == 1:
+                fpaths = fpaths[st_val:ed_val]
+                poses = poses[st_val:ed_val]
+            else:
+                fpaths = fpaths[:st_val] + fpaths[ed_val:]
+                poses = np.concatenate((poses[:st_val], poses[ed_val:]), axis=0)
 
             # Random Segment
             assert(overlap < min(seq_len_range))
