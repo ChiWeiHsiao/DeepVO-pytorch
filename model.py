@@ -61,12 +61,21 @@ class DeepVO(nn.Module):
                 kaiming_normal_(m.weight_hh_l0)
                 m.bias_ih_l0.data.zero_()
                 m.bias_hh_l0.data.zero_()
+                # Set forget gate bias to 1 (remember)
+                n = m.bias_hh_l0.size(0)
+                start, end = n//4, n//2
+                m.bias_hh_l0.data[start:end].fill_(1.)
+
                 # layer 2
                 #orthogonal_(m.weight_ih_l1)
                 kaiming_normal_(m.weight_ih_l1)
                 kaiming_normal_(m.weight_hh_l1)
                 m.bias_ih_l1.data.zero_()
                 m.bias_hh_l1.data.zero_()
+                n = m.bias_hh_l1.size(0)
+                start, end = n//4, n//2
+                m.bias_hh_l1.data[start:end].fill_(1.)
+                
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
