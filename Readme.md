@@ -35,6 +35,4 @@
 
 
 ## Result
-<img src="https://i.imgur.com/sZwga7R.png" width="200" height="200"> 
-<img src="https://i.imgur.com/3Rk8uKW.png" width="200" height="200">
-<img src="https://i.imgur.com/zLF1o83.png" width="200" height="200">
+- <img src="https://i.imgur.com/sZwga7R.png" width="200" height="200"> <img src="https://i.imgur.com/3Rk8uKW.png" width="200" height="200"> <img src="https://i.imgur.com/zLF1o83.png" width="200" height="200">
