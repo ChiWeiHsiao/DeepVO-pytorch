@@ -8,13 +8,13 @@ def plot_route(gt, out, c_gt='g', c_out='r'):
 	x = [[v for v in gt[:, x_idx]]]
 	y = [[v for v in gt[:, y_idx]]]
 	for i in range(len(x)):
-		plt.plot(x[i], y[i], color=c_gt)
+		plt.plot(x[i], y[i], color=c_gt, label='Ground Truth')
 		#plt.scatter(x[i], y[i], color='b')
 
 	x = [[v for v in out[:, x_idx]]]
 	y = [[v for v in out[:, y_idx]]]
 	for i in range(len(x)):
-		plt.plot(x[i], y[i], color=c_out)
+		plt.plot(x[i], y[i], color=c_out, label='DeepVO')
 		#plt.scatter(x[i], y[i], color='b')
 	plt.gca().set_aspect('equal', adjustable='datalim')
 
@@ -54,12 +54,15 @@ for video in video_list:
 		c_gt = (0, g, 0)
 		c_out = (1, g, 0)
 		plot_route(gt[st:end], out[st:end], c_gt, c_out)
+		if st == 0:
+			plt.legend()
 		plt.title('Video {}'.format(video))
 		save_name = '{}route_video_{}.png'.format(result_dir, video)
 	plt.savefig(save_name)
 
 	# plot one color
 	#plot_route(gt, out)
+	#plt.legend()
 	#plt.title('Video {}'.format(video))
 	#save_name = '{}route_video_{}.png'.format(result_dir, video)
 	#plt.savefig(save_name)
