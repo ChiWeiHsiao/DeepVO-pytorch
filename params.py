@@ -6,12 +6,24 @@ class Parameters():
 		# Path
 		self.image_dir = '/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/images/'
 		self.pose_dir = '/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/pose_GT/'
-		self.train_video = ['00', '02', '08', '09', '01', '04', '05', '06', '07', '10'] 
+
+		
+		self.train_video = ['00', '02', '08', '09', '01', '04', '05', '07', '10']  # '06'
+		self.valid_video = [] # 06
+		self.partition = 0.8   # None # partition videos in 'train_video' to train / valid dataset
+		
+
+		'''
+		self.train_video = ['00', '02', '08', '09', '01', '06', ] 
+		self.valid_video = ['04', '05', '07', '10']
+		self.partition = None  # partition videos in 'train_video' to train / valid dataset
+		'''
+
+		'''
+		self.train_video = ['00', '02', '08', '09', '01', '04', '05', '06', '07', '10']
 		self.valid_video = []
 		self.partition = 0.7   # None # partition videos in 'train_video' to train / valid dataset
-		#self.train_video = ['00', '02', '08', '09', '01', '04', '05', '06', '07', '10']  # 09
-		#self.valid_video = []
-		#self.partition = 0.7   # None # partition videos in 'train_video' to train / valid dataset
+		'''
 
 		# Data Preprocessing
 		self.resize_mode = 'rescale' # 'crop' 'rescale' None
