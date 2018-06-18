@@ -2,16 +2,16 @@ import os
 
 class Parameters():
 	def __init__(self):
-		self.n_processors = 4
+		self.n_processors = 8
 		# Path
 		self.image_dir = '/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/images/'
 		self.pose_dir = '/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/pose_GT/'
 
 		
-		self.train_video = ['00', '02', '08', '09', '01', '04', '05', '07', '10']  # '06'
+		self.train_video = ['00', '02', '08', '09', '01', '05', '07', '10']  # '06' # '04'
 		self.valid_video = [] # 06
 		self.partition = 0.8   # None # partition videos in 'train_video' to train / valid dataset
-		
+		#self.test_video = ['06', '04']
 
 		'''
 		self.train_video = ['00', '02', '08', '09', '01', '06', ] 
@@ -33,8 +33,8 @@ class Parameters():
 		self.img_stds = (1, 1, 1)  #(0.309122, 0.315710, 0.3226514)  #(1, 1, 1) 
 		self.minus_point_5 = True
 
-		self.seq_len = [7, 9]  # [8, 10]
-		self.sample_times = 3  # 1
+		self.seq_len = (4, 6)  # [7, 9]
+		self.sample_times = 2  # 1
 
 		# Data info path
 		self.train_data_info_path = 'datainfo/train_df_t{}_v{}_p{}_seq{}x{}_sample{}.pickle'.format(''.join(self.train_video), ''.join(self.valid_video), self.partition, self.seq_len[0], self.seq_len[1], self.sample_times)
@@ -43,14 +43,14 @@ class Parameters():
 
 		# Model
 		self.rnn_hidden_size = 1000  # 1000 500
-		#self.conv_dropout = 0.3
+		self.conv_dropout = (0, 0.2, 0, 0.2, 0, 0.2, 0, 0.2, 0)
 		self.rnn_dropout_in = 0.5
 		self.rnn_dropout_out = 0.5
 		self.rnn_dropout_between = 0.5  # 0: no dropout
 		self.clip = None # 5
 		self.batch_norm = True
 		# Training
-		self.batch_size = 16 # 64 8 128
+		self.batch_size = 48 # 16 8
 		self.pin_mem = True
 		self.epochs = 100  #27
 		self.optim = {'opt': 'Adagrad', 'lr': 0.001}
@@ -59,7 +59,7 @@ class Parameters():
 					# {'opt': 'Cosine', 'T': 100 , 'lr': 0.001}
 		
 		# Pretrain, Retrain
-		self.pretrained_flownet = './pretrained/flownets_bn_EPE2.459.pth.tar'  
+		self.pretrained_flownet = None  #'./pretrained/flownets_bn_EPE2.459.pth.tar'  
 								# None
 								# './pretrained/flownets_bn_EPE2.459.pth.tar'  
 								# './pretrained/flownets_EPE1.951.pth.tar'

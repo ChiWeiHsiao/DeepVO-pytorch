@@ -5,17 +5,19 @@ from torch.autograd import Variable
 from torch.nn.init import kaiming_normal_, orthogonal_
 import numpy as np
 
-def conv(batchNorm, in_planes, out_planes, kernel_size=3, stride=1):
+def conv(batchNorm, in_planes, out_planes, kernel_size=3, stride=1, dropout=0):
     if batchNorm:
         return nn.Sequential(
             nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=(kernel_size-1)//2, bias=False),
             nn.BatchNorm2d(out_planes),
-            nn.LeakyReLU(0.1,inplace=True)
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(dropout, inplace=True)
         )
     else:
         return nn.Sequential(
             nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=(kernel_size-1)//2, bias=True),
-            nn.LeakyReLU(0.1,inplace=True)
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(dropout, inplace=True)
         )
 
 class DeepVO(nn.Module):
@@ -24,15 +26,15 @@ class DeepVO(nn.Module):
         # CNN
         self.batchNorm = batchNorm
         self.clip = par.clip
-        self.conv1   = conv(self.batchNorm,   6,   64, kernel_size=7, stride=2)
-        self.conv2   = conv(self.batchNorm,  64,  128, kernel_size=5, stride=2)
-        self.conv3   = conv(self.batchNorm, 128,  256, kernel_size=5, stride=2)
-        self.conv3_1 = conv(self.batchNorm, 256,  256)
-        self.conv4   = conv(self.batchNorm, 256,  512, stride=2)
-        self.conv4_1 = conv(self.batchNorm, 512,  512)
-        self.conv5   = conv(self.batchNorm, 512,  512, stride=2)
-        self.conv5_1 = conv(self.batchNorm, 512,  512)
-        self.conv6   = conv(self.batchNorm, 512, 1024, stride=2)
+        self.conv1   = conv(self.batchNorm,   6,   64, kernel_size=7, stride=2, par.conv_dropout[0])
+        self.conv2   = conv(self.batchNorm,  64,  128, kernel_size=5, stride=2, par.conv_dropout[1])
+        self.conv3   = conv(self.batchNorm, 128,  256, kernel_size=5, stride=2, par.conv_dropout[2])
+        self.conv3_1 = conv(self.batchNorm, 256,  256, kernel_size=3, stride=1, par.conv_dropout[3])
+        self.conv4   = conv(self.batchNorm, 256,  512, kernel_size=3, stride=2, par.conv_dropout[4])
+        self.conv4_1 = conv(self.batchNorm, 512,  512, kernel_size=3, stride=1, par.conv_dropout[5])
+        self.conv5   = conv(self.batchNorm, 512,  512, kernel_size=3, stride=2, par.conv_dropout[6])
+        self.conv5_1 = conv(self.batchNorm, 512,  512, kernel_size=3, stride=1, par.conv_dropout[7])
+        self.conv6   = conv(self.batchNorm, 512, 1024, kernel_size=3, stride=2, par.conv_dropout[8])
         # Comput the shape based on diff image size
         __tmp = Variable(torch.zeros(1, 6, imsize1, imsize2))
         __tmp = self.encode_image(__tmp)
@@ -75,7 +77,7 @@ class DeepVO(nn.Module):
                 n = m.bias_hh_l1.size(0)
                 start, end = n//4, n//2
                 m.bias_hh_l1.data[start:end].fill_(1.)
-                
+
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
