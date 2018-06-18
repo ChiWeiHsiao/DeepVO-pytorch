@@ -12,7 +12,14 @@ from torch.utils.data import DataLoader
 
 # Load model
 M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
-load_model_path = par.load_model_path #+ '.valid' + '.ep27'
+
+# Path
+load_model_path = par.load_model_path + '.train'  # choose the model you want to load
+save_dir = 'result/'  # directory to save prediction answer
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+
+
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     M_deepvo = M_deepvo.cuda()
@@ -92,10 +99,6 @@ for test_video in test_video_list:
 
 
     # Save answer
-    save_dir = 'result/'
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
     with open('{}out_{}.txt'.format(save_dir, test_video), 'w') as f:
         for pose in answer:
             if type(pose) == list:
