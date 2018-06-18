@@ -21,15 +21,15 @@ def plot_route(gt, out, c_gt='g', c_out='r'):
 
 # Load in GT and predicted pose
 video_list = ['04', '05', '07', '10', '09']
+
 for video in video_list:
 	pose_GT_dir = 'KITTI/pose_GT/'
 	result_dir = 'result_ep37/'
-	overfit =  '' #'overfit_' #''
 	print('Testing video {}'.format(video))
 
 	GT_pose_path = '{}{}.npy'.format(pose_GT_dir, video)
 	gt = np.load(GT_pose_path)
-	pose_result_path = '{}{}out_{}.txt'.format(result_dir, overfit, video)
+	pose_result_path = '{}out_{}.txt'.format(result_dir, video)
 	with open(pose_result_path) as f_out:
 		out = [l.split('\n')[0] for l in f_out.readlines()]
 		#gt, out = gt[ignore_first:], out[ignore_first:]
@@ -38,6 +38,7 @@ for video in video_list:
 		out = np.array(out)
 		print('out shape', out.shape)
 		print('gt shape', gt.shape)
+
 		# show some of result
 		for i in range(100, 105):
 			print('==========')
@@ -54,11 +55,11 @@ for video in video_list:
 		c_out = (1, g, 0)
 		plot_route(gt[st:end], out[st:end], c_gt, c_out)
 		plt.title('Video {}'.format(video))
-		save_name = '{}{}route_video_{}.png'.format(result_dir, overfit, video)
+		save_name = '{}route_video_{}.png'.format(result_dir, video)
 	plt.savefig(save_name)
 
 	# plot one color
 	#plot_route(gt, out)
 	#plt.title('Video {}'.format(video))
-	#save_name = '{}{}route_video_{}.png'.format(result_dir, overfit, video)
+	#save_name = '{}route_video_{}.png'.format(result_dir, video)
 	#plt.savefig(save_name)

@@ -13,6 +13,7 @@ from data_helper import get_data_info, SortedRandomBatchSampler, ImageSequenceDa
 # Write all hyperparameters to record_path
 mode = 'a' if par.resume else 'w'
 with open(par.record_path, mode) as f:
+	f.write('\n'+'='*50 + '\n')
 	f.write('\n'.join("%s: %s" % item for item in vars(par).items()))
 	f.write('\n'+'='*50 + '\n')
 
