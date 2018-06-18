@@ -2,7 +2,7 @@
 - This is the PyTorch implementation of ICRA 2017 paper [DeepVO: Towards end-to-end visual odometry with deep Recurrent Convolutional Neural Networks](https://ieeexplore.ieee.org/document/7989236/)
 ## Usage
 - Download [KITTI](http://www.cvlibs.net/datasets/kitti/raw_data.php) data
-	- This shell ```KITTI/downloader.sh`` can be used to download the KITTI images
+	- This shell ```KITTI/downloader.sh``` can be used to download the KITTI images
 		- the shell will only keep the left camera color images (image_03 folder) and delete other data
 		- the downloaded images will be placed at ```KITTI/images/00/```, ```KITTI/images/01```, ...
 		- the images offered by KITTI is already rectified
