@@ -13,6 +13,9 @@ files=(
 09:2011_09_30_drive_0033
 10:2011_09_30_drive_0034
 )
+echo 'start downloading trained model......'
+wget 'https://www.polybox.ethz.ch/index.php/s/90OlHg6KWBzG6gR'
+echo 'model downloading finished! start downloading raw images....'
 
 mkdir 'images'
 
@@ -47,5 +50,6 @@ for i in ${files[@]}; do
                 mv $dirn'image_03/data' 'images/'$rename
                 rm -r ${dirn:0:10}
         fi
+echo 'all downloading done!'
 done
 
