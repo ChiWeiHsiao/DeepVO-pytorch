@@ -4,7 +4,7 @@ class Parameters():
 	def __init__(self):
 		self.n_processors = 16
 		# Path
-		self.data_dir =  '.'  #'/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/'
+		self.data_dir =  './KITTI/'  #'/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/'
 		self.image_dir = self.data_dir + '/images/'
 		self.pose_dir = self.data_dir + '/pose_GT/'
 		
