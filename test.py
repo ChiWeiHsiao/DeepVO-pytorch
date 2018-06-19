@@ -10,16 +10,18 @@ import torch
 from data_helper import get_data_info, ImageSequenceDataset
 from torch.utils.data import DataLoader
 
-# Load model
-M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
+
+videos_to_test = ['04', '05', '07', '10', '09']
 
 # Path
-load_model_path = par.load_model_path + '.train'  # choose the model you want to load
+load_model_path = par.load_model_path   #choose the model you want to load
 save_dir = 'result/'  # directory to save prediction answer
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
 
+# Load model
+M_deepvo = DeepVO(par.img_h, par.img_w, par.batch_norm)
 use_cuda = torch.cuda.is_available()
 if use_cuda:
     M_deepvo = M_deepvo.cuda()
@@ -31,23 +33,18 @@ print('Load model from: ', load_model_path)
 
 
 # Data
-test_video_list = ['04', '05', '07', '10', '09']
 n_workers = 1
 seq_len = int((par.seq_len[0]+par.seq_len[1])/2)
 overlap = seq_len - 1
 print('seq_len = {},  overlap = {}'.format(seq_len, overlap))
 batch_size = par.batch_size
 
-for test_video in test_video_list:
+for test_video in videos_to_test:
     df = get_data_info(folder_list=[test_video], seq_len_range=[seq_len, seq_len], overlap=overlap, sample_times=1, shuffle=False, sort=False)
     df = df.loc[df.seq_len == seq_len]  # drop last
     dataset = ImageSequenceDataset(df, par.resize_mode, (par.img_w, par.img_h), par.img_means, par.img_stds, par.minus_point_5)
     df.to_csv('test_df.csv')
-    dataloader = DataLoader(
-                    dataset, 
-                    batch_size=batch_size,
-                    shuffle=False, 
-                    num_workers=n_workers)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=n_workers)
     gt_pose = np.load('{}{}.npy'.format(par.pose_dir, test_video))  # (n_images, 6)
 
     # Predict
@@ -56,7 +53,6 @@ for test_video in test_video_list:
     answer = [[0.0]*6, ]
     st_t = time.time()
     n_batch = len(dataloader)
-    mse_loss = 0
     for i, batch in enumerate(dataloader):
         print('{} / {}'.format(i, n_batch), end='\r', flush=True)
         _, x, y = batch
@@ -65,22 +61,13 @@ for test_video in test_video_list:
             y = y.cuda()
         batch_predict_pose = M_deepvo.forward(x)
 
-        # Calculate Loss
-        y = y[:, 1:, :]
-        angle_loss = torch.nn.functional.mse_loss(batch_predict_pose[:, :,:3], y[:, :,:3])
-        translation_loss = torch.nn.functional.mse_loss(batch_predict_pose[:, :,3:], y[:, :,3:])
-        loss = (100 * angle_loss + translation_loss)
-        mse_loss += float(loss)
-
         # Record answer
         batch_predict_pose = batch_predict_pose.data.cpu().numpy()
-        #predict_pose_seq = predict_pose_seq.data.cpu().numpy()[0]  # only 1 in batch
         if i == 0:
             for pose in batch_predict_pose[0]:
                 # use all predicted pose in the first prediction
                 for i in range(len(pose)):
                     # Convert predicted relative pose to absolute pose by adding last pose
-                    #pose[i] += gt_pose[len(answer)-1][i]
                     pose[i] += answer[-1][i]
                 answer.append(pose.tolist())
             batch_predict_pose = batch_predict_pose[1:]
@@ -90,16 +77,14 @@ for test_video in test_video_list:
             last_pose = predict_pose_seq[-1]
             for i in range(len(last_pose)):
                 last_pose[i] += answer[-1][i]
-                #last_pose[i] += gt_pose[len(answer)-1][i]
             answer.append(last_pose.tolist())
     print('len(answer): ', len(answer))
     print('expect len: ', len(glob.glob('{}{}/*.png'.format(par.image_dir, test_video))))
     print('Predict use {} sec'.format(time.time() - st_t))
-    print('MSE loss = ', mse_loss / n_batch)
 
 
     # Save answer
-    with open('{}out_{}.txt'.format(save_dir, test_video), 'w') as f:
+    with open('{}/out_{}.txt'.format(save_dir, test_video), 'w') as f:
         for pose in answer:
             if type(pose) == list:
                 f.write(', '.join([str(p) for p in pose]))

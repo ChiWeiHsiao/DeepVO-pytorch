@@ -36,11 +36,7 @@ def get_data_info(folder_list, seq_len_range, overlap, sample_times=1, pad_y=Fal
                 if res != 0:
                     n_frames = n_frames - res
                 x_segs = [fpaths[i:i+seq_len] for i in range(st, n_frames, jump)]
-                #if len(x_segs[-1]) < seq_len:
-                #    x_segs = x_segs[:-1]
                 y_segs = [poses[i:i+seq_len] for i in range(st, n_frames, jump)]
-                #if len(y_segs[-1]) < seq_len:
-                #    y_segs = y_segs[:-1]
                 Y += y_segs
                 X_path += x_segs
                 X_len += [len(xs) for xs in x_segs]
@@ -180,13 +176,13 @@ class SortedRandomBatchSampler(Sampler):
 
 
 class ImageSequenceDataset(Dataset):
-    def __init__(self, info_dataframe, resize_mode='crop', new_size=None, img_mean=None, img_std=(1,1,1), minus_point_5=False):
+    def __init__(self, info_dataframe, resize_mode='crop', new_sizeize=None, img_mean=None, img_std=(1,1,1), minus_point_5=False):
         # Transforms
         transform_ops = []
         if resize_mode == 'crop':
-            transform_ops.append(transforms.CenterCrop((new_size[0], new_size[1])))
+            transform_ops.append(transforms.CenterCrop((new_sizeize[0], new_sizeize[1])))
         elif resize_mode == 'rescale':
-            transform_ops.append(transforms.Resize((new_size[0], new_size[1])))
+            transform_ops.append(transforms.Resize((new_sizeize[0], new_sizeize[1])))
         transform_ops.append(transforms.ToTensor())
         #transform_ops.append(transforms.Normalize(mean=img_mean, std=img_std))
         self.transformer = transforms.Compose(transform_ops)
@@ -204,8 +200,8 @@ class ImageSequenceDataset(Dataset):
         groundtruth_sequence[1:] = groundtruth_sequence[1:] - groundtruth_sequence[0:-1]  # get relative pose w.r.t. previois frame 
         
         image_path_sequence = self.image_arr[index]
-        sequence_len = torch.tensor(self.seq_len_list[index])
-        #sequence_len = torch.tensor(len(image_path_sequence))
+        sequence_len = torch.tensor(self.seq_len_list[index])  #sequence_len = torch.tensor(len(image_path_sequence))
+        
         image_sequence = []
         for img_path in image_path_sequence:
             img_as_img = Image.open(img_path)
@@ -213,9 +209,6 @@ class ImageSequenceDataset(Dataset):
             if self.minus_point_5:
                 img_as_tensor = img_as_tensor - 0.5  # from [0, 1] -> [-0.5, 0.5]
             img_as_tensor = self.normalizer(img_as_tensor)
-            #if self.subtract_mean != None:
-            #    for c in range(3):
-            #        img_as_tensor[c] -= self.subtract_mean[c]
             img_as_tensor = img_as_tensor.unsqueeze(0)
             image_sequence.append(img_as_tensor)
         image_sequence = torch.cat(image_sequence, 0)
@@ -226,6 +219,7 @@ class ImageSequenceDataset(Dataset):
 
 
 
+# Example of usage
 if __name__ == '__main__':
     start_t = time.time()
     # Gernerate info dataframe
@@ -238,13 +232,11 @@ if __name__ == '__main__':
     # Customized Dataset, Sampler
     n_workers = 4
     resize_mode = 'crop'
-    new_s = (150, 600)
-    img_mean = (89.87475578450945/255, 94.48404712783562/255, 92.50648653696369/255)
-    dataset = ImageSequenceDataset(df, resize_mode, new_s, img_mean)
+    new_size = (150, 600)
+    img_mean = (-0.14968217427134656, -0.12941663107068363, -0.1320610301921484)
+    dataset = ImageSequenceDataset(df, resize_mode, new_size, img_mean)
     sorted_sampler = SortedRandomBatchSampler(df, batch_size=4, drop_last=True)
-    dataloader = DataLoader(dataset, 
-                            batch_sampler=sorted_sampler, 
-                            num_workers=n_workers)
+    dataloader = DataLoader(dataset, batch_sampler=sorted_sampler, num_workers=n_workers)
     print('Elapsed Time (dataloader): {} sec'.format(time.time()-start_t))
 
     for batch in dataloader:

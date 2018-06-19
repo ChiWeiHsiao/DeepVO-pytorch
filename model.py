@@ -58,8 +58,7 @@ class DeepVO(nn.Module):
                     m.bias.data.zero_()
             elif isinstance(m, nn.LSTM):
                 # layer 1
-                #orthogonal_(m.weight_ih_l0)
-                kaiming_normal_(m.weight_ih_l0)
+                kaiming_normal_(m.weight_ih_l0)  #orthogonal_(m.weight_ih_l0)
                 kaiming_normal_(m.weight_hh_l0)
                 m.bias_ih_l0.data.zero_()
                 m.bias_hh_l0.data.zero_()
@@ -69,8 +68,7 @@ class DeepVO(nn.Module):
                 m.bias_hh_l0.data[start:end].fill_(1.)
 
                 # layer 2
-                #orthogonal_(m.weight_ih_l1)
-                kaiming_normal_(m.weight_ih_l1)
+                kaiming_normal_(m.weight_ih_l1)  #orthogonal_(m.weight_ih_l1)
                 kaiming_normal_(m.weight_hh_l1)
                 m.bias_ih_l1.data.zero_()
                 m.bias_hh_l1.data.zero_()

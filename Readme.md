@@ -1,19 +1,21 @@
 # Readme
 - This is the PyTorch implementation of ICRA 2017 paper [DeepVO: Towards end-to-end visual odometry with deep Recurrent Convolutional Neural Networks](https://ieeexplore.ieee.org/document/7989236/)
 ## Usage
-- Download [KITTI](http://www.cvlibs.net/datasets/kitti/raw_data.php) data
-	- This shell ```KITTI/downloader.sh``` can be used to download the KITTI images
+- Download KITTI data and our pretrained model
+	- This shell ```KITTI/downloader.sh``` can be used to download the KITTI images and pretrained model
 		- the shell will only keep the left camera color images (image_03 folder) and delete other data
 		- the downloaded images will be placed at ```KITTI/images/00/```, ```KITTI/images/01```, ...
 		- the images offered by KITTI is already rectified
+		- the direct [download link](https://www.polybox.ethz.ch/index.php/s/90OlHg6KWBzG6gR) of pretrained model
 	- Download the ground truth pose from [KITTI Visual Odometry](http://www.cvlibs.net/datasets/kitti/eval_odometry.php)
-		- direct link is: [odometry ground truth poses (4 MB)](http://www.cvlibs.net/download.php?file=data_odometry_poses.zip)
+		- you need to enter your email to request the pose data [here](http://www.cvlibs.net/download.php?file=data_odometry_poses.zip)
 		- and place the ground truth pose at ```KITTI/pose_GT/```
 - Run 'preprocess.py' to 
     - remove unused images based on the readme file in KITTI devkit
     - convert the ground truth poses from KITTI (12 floats [R|t]) into 6 floats (euler angle + translation)
     - and save the transformed ground truth pose into ```.npy``` file
 - Pretrained weight of FlowNet ( CNN part ) can be downloaded [here](https://drive.google.com/drive/folders/0B5EC7HMbyk3CbjFPb0RuODI3NmM)
+	- note that this pretrained FlowNet model assumes that RGB value range is [-0.5, 0.5]
 	- the code of CNN layers is modified from [ClementPinard/FlowNetPytorch](https://github.com/ClementPinard/FlowNetPytorch)
 - Specify the paths and changes hyperparameters in ```params.py```
 	- If your computational resource is limited, please be careful with the following arguments:
@@ -26,7 +28,7 @@
 - Run ```test.py``` to output predicted pose
 	- output to ```result/```
 	- file name will be like ``out_00.txt``
-- Run ```visualize.py``` to visualize the prediction route path
+- Run ```visualize.py``` to visualize the prediction of route
 - Other files:
 	- ```model.py```: model is defined here
 	- ```data_helper.py```: customized PyTorch dataset and sampler
