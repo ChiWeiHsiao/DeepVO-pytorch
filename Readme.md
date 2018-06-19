@@ -36,6 +36,6 @@
 
 ## Result
 - Training Sequences
-<img src="https://i.imgur.com/P47OOtQ.png" width="200" height="200"> <img src="https://i.imgur.com/yDjWpZ3.png" width="200" height="200">
+	- <img src="https://i.imgur.com/P47OOtQ.png" width="200" height="200"> <img src="https://i.imgur.com/yDjWpZ3.png" width="200" height="200">
 - Testing Sequence
-<img src="https://i.imgur.com/hdTlQkD.png" width="200" height="200"> <img src="https://i.imgur.com/VTAN321.png" width="200" height="200">
+	- <img src="https://i.imgur.com/hdTlQkD.png" width="200" height="200"> <img src="https://i.imgur.com/VTAN321.png" width="200" height="200">
