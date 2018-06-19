@@ -1,5 +1,8 @@
 # Readme
 - This is the PyTorch implementation of ICRA 2017 paper [DeepVO: Towards end-to-end visual odometry with deep Recurrent Convolutional Neural Networks](https://ieeexplore.ieee.org/document/7989236/)
+- Model
+    - ![](https://imgur.com/vo0vXgk.png)
+
 ## Usage
 - Download KITTI data and our pretrained model
 	- This shell ```KITTI/downloader.sh``` can be used to download the KITTI images and pretrained model
