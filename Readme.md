@@ -34,6 +34,15 @@
 	- ```data_helper.py```: customized PyTorch dataset and sampler
 		- the input images is loaded batch by batch
 	
+	
+## Required packages
+- pytorch 0.4.0
+- torchvision 0.2.1
+- numpy
+- pandas
+- pillow
+- matplotlib
+- glob
 
 
 ## Result
