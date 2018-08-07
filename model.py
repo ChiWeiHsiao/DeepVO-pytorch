@@ -40,7 +40,6 @@ class DeepVO(nn.Module):
         __tmp = self.encode_image(__tmp)
 
         # RNN
-        self.rnn_drop_in = nn.Dropout(par.rnn_dropout_in)
         self.rnn = nn.LSTM(
                     input_size=int(np.prod(__tmp.size())), 
                     hidden_size=par.rnn_hidden_size, 
@@ -90,10 +89,11 @@ class DeepVO(nn.Module):
         # CNN
         x = x.view(batch_size*seq_len, x.size(2), x.size(3), x.size(4))
         x = self.encode_image(x)
-        flatten = x.view(batch_size, seq_len, x.size(1)*x.size(2)*x.size(3))        
+        x = x.view(batch_size, seq_len, -1)
+
+
         # RNN
-        flatten = self.rnn_drop_in(flatten)
-        out, hc = self.rnn(flatten)
+        out, hc = self.rnn(x)
         out = self.rnn_drop_out(out)
         out = self.linear(out)
         return out

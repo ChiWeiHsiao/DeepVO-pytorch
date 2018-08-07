@@ -2,14 +2,14 @@ import os
 
 class Parameters():
 	def __init__(self):
-		self.n_processors = 16
+		self.n_processors = 8
 		# Path
-		self.data_dir =  './KITTI/'  #'/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/'
+		self.data_dir =  '/nfs/nas12.ethz.ch/fs1201/infk_ivc_students/cvg-students/chsiao/KITTI/'
 		self.image_dir = self.data_dir + '/images/'
 		self.pose_dir = self.data_dir + '/pose_GT/'
 		
-		self.train_video = ['00', '02', '08', '09', '01', '05', '07', '10']
-		self.valid_video = ['06', '04']
+		self.train_video = ['00', '01', '02', '05', '08', '09']
+		self.valid_video = ['04', '06', '07', '10']
 		self.partition = None  # partition videos in 'train_video' to train / valid dataset  #0.8
 		
 
@@ -21,7 +21,7 @@ class Parameters():
 		self.img_stds = (1, 1, 1)  #(0.309122, 0.315710, 0.3226514)
 		self.minus_point_5 = True
 
-		self.seq_len = (4, 6)
+		self.seq_len = (5, 7)
 		self.sample_times = 3
 
 		# Data info path
@@ -31,17 +31,16 @@ class Parameters():
 
 		# Model
 		self.rnn_hidden_size = 1000
-		self.conv_dropout = (0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2, 0.2)
-		self.rnn_dropout_in = 0.5
+		self.conv_dropout = (0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5)
 		self.rnn_dropout_out = 0.5
-		self.rnn_dropout_between = 0.5   # 0: no dropout
+		self.rnn_dropout_between = 0   # 0: no dropout
 		self.clip = None
 		self.batch_norm = True
 		# Training
-		self.epochs = 100
-		self.batch_size = 16
+		self.epochs = 250
+		self.batch_size = 8
 		self.pin_mem = True
-		self.optim = {'opt': 'Adagrad', 'lr': 0.001}
+		self.optim = {'opt': 'Adagrad', 'lr': 0.0005}
 					# Choice:
 					# {'opt': 'Adagrad', 'lr': 0.001}
 					# {'opt': 'Adam'}
