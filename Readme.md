@@ -28,6 +28,7 @@
 - Run ```main.py``` to train the model
 	- the trained model and optimizer will be saved in ```models/```
 	- the records will be saved in ```records/```
+- The trained weight can be downloaded [here](https://drive.google.com/drive/folders/1Zb6wObjdZ2lvhM07pgvJGhoZgJKFJMOa?usp=sharing)
 - Run ```test.py``` to output predicted pose
 	- output to ```result/```
 	- file name will be like ``out_00.txt``
@@ -50,6 +51,8 @@
 
 ## Result
 - Training Sequences
-	- <img src="https://i.imgur.com/P47OOtQ.png" width="200" height="200"> <img src="https://i.imgur.com/yDjWpZ3.png" width="200" height="200">
+	- <img src="https://i.imgur.com/HQKW42J.png" width="200" height="200"> <img src="https://i.imgur.com/LQj8T8G.png" width="200" height="200"> <img src="https://i.imgur.com/I2Y35Pl.png" width="200" height="200"> <img src="https://i.imgur.com/XgVLtjN.png" width="200" height="200"> <img src="https://i.imgur.com/uuFUbdz.png" width="200" height="200"> 
 - Testing Sequence
-	- <img src="https://i.imgur.com/hdTlQkD.png" width="200" height="200"> <img src="https://i.imgur.com/VTAN321.png" width="200" height="200">
+	- <img src="https://i.imgur.com/eAfHI6N.png" width="200" height="200"> <img src="https://i.imgur.com/LgNSvjB.png" width="200" height="200"><img src="https://i.imgur.com/6OnEjci.png" width="200" height="200"> <img src="https://i.imgur.com/VlL6LH9.png" width="200" height="200">
+
+
