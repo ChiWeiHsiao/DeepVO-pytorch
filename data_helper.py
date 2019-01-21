@@ -9,6 +9,7 @@ from torch.utils.data.sampler import Sampler
 from torchvision import transforms
 import time
 from params import par
+from helper import normalize_angle_delta
 
 
 def get_data_info(folder_list, seq_len_range, overlap, sample_times=1, pad_y=False, shuffle=False, sort=True):
@@ -55,7 +56,7 @@ def get_data_info(folder_list, seq_len_range, overlap, sample_times=1, pad_y=Fal
                         if not pad_y:
                             Y.append(poses[start:start+n])
                         else:
-                            pad_zero = np.zeros((max_len-n, 6))
+                            pad_zero = np.zeros((max_len-n, 15))
                             padded = np.concatenate((poses[start:start+n], pad_zero))
                             Y.append(padded.tolist())
                     else:
@@ -195,10 +196,31 @@ class ImageSequenceDataset(Dataset):
         self.groundtruth_arr = np.asarray(self.data_info.pose)
 
     def __getitem__(self, index):
-        groundtruth_sequence = self.groundtruth_arr[index]
+        raw_groundtruth = np.hsplit(self.groundtruth_arr[index], np.array([6]))	
+        groundtruth_sequence = raw_groundtruth[0]
+        groundtruth_rotation = raw_groundtruth[1][0].reshape((3, 3)).T # opposite rotation of the first frame
         groundtruth_sequence = torch.FloatTensor(groundtruth_sequence)
-        groundtruth_sequence[1:] = groundtruth_sequence[1:] - groundtruth_sequence[0:-1]  # get relative pose w.r.t. previois frame 
-        
+        # groundtruth_sequence[1:] = groundtruth_sequence[1:] - groundtruth_sequence[0:-1]  # get relative pose w.r.t. previois frame 
+
+        groundtruth_sequence[1:] = groundtruth_sequence[1:] - groundtruth_sequence[0] # get relative pose w.r.t. the first frame in the sequence 
+		
+        # print('Item before transform: ' + str(index) + '   ' + str(groundtruth_sequence))
+
+        # here we rotate the sequence relative to the first frame
+        for gt_seq in groundtruth_sequence[1:]:
+            location = torch.FloatTensor(groundtruth_rotation.dot(gt_seq[3:].numpy()))
+            gt_seq[3:] = location[:]
+            # print(location)
+
+        # get relative pose w.r.t. previous frame
+        groundtruth_sequence[2:] = groundtruth_sequence[2:] - groundtruth_sequence[1:-1]
+
+		# here we consider cases when rotation angles over Y axis go through PI -PI discontinuity
+        for gt_seq in groundtruth_sequence[1:]:
+            gt_seq[0] = normalize_angle_delta(gt_seq[0])
+			
+        # print('Item after transform: ' + str(index) + '   ' + str(groundtruth_sequence))
+
         image_path_sequence = self.image_arr[index]
         sequence_len = torch.tensor(self.seq_len_list[index])  #sequence_len = torch.tensor(len(image_path_sequence))
         
