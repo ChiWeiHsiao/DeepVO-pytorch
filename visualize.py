@@ -40,7 +40,7 @@ for video in video_list:
 			out[i] = [float(v) for v in line.split(',')]
 		out = np.array(out)
 		mse_rotate = 100 * np.mean((out[:, :3] - gt[:, :3])**2)
-		mse_translate = np.mean((out[:, 3:] - gt[:, 3:])**2)
+		mse_translate = np.mean((out[:, 3:] - gt[:, 3:6])**2)
 		print('mse_rotate: ', mse_rotate)
 		print('mse_translate: ', mse_translate)
 
