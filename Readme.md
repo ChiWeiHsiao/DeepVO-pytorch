@@ -28,7 +28,6 @@
 - Run ```main.py``` to train the model
 	- the trained model and optimizer will be saved in ```models/```
 	- the records will be saved in ```records/```
-- The trained weight can be downloaded [here](https://drive.google.com/drive/folders/1Zb6wObjdZ2lvhM07pgvJGhoZgJKFJMOa?usp=sharing)
 - Run ```test.py``` to output predicted pose
 	- output to ```result/```
 	- file name will be like ``out_00.txt``
@@ -37,8 +36,12 @@
 	- ```model.py```: model is defined here
 	- ```data_helper.py```: customized PyTorch dataset and sampler
 		- the input images is loaded batch by batch
-	
-	
+		
+## Download trained model
+Provided by [alexart13](https://github.com/alexart13).
+- [trained model](https://drive.google.com/file/d/1l0s3rYWgN8bL0Fyofee8IhN-0knxJF22/view)
+- [optimzor](https://drive.google.com/file/d/1JlVJwEZy4W4EmgtTCNWmM4YAACUHxnr2/view)
+
 ## Required packages
 - pytorch 0.4.0
 - torchvision 0.2.1
@@ -48,11 +51,38 @@
 - matplotlib
 - glob
 
-
 ## Result
 - Training Sequences
-	- <img src="https://i.imgur.com/HQKW42J.png" width="200" height="200"> <img src="https://i.imgur.com/LQj8T8G.png" width="200" height="200"> <img src="https://i.imgur.com/I2Y35Pl.png" width="200" height="200"> <img src="https://i.imgur.com/XgVLtjN.png" width="200" height="200"> <img src="https://i.imgur.com/uuFUbdz.png" width="200" height="200"> 
-- Testing Sequence
-	- <img src="https://i.imgur.com/eAfHI6N.png" width="200" height="200"> <img src="https://i.imgur.com/LgNSvjB.png" width="200" height="200"><img src="https://i.imgur.com/6OnEjci.png" width="200" height="200"> <img src="https://i.imgur.com/VlL6LH9.png" width="200" height="200">
+<table border=1>
+<tr>
+<td>
+<img src="https://user-images.githubusercontent.com/32840403/51480655-96989400-1da2-11e9-9cd7-c0618ed3ff6d.png" width="24%"/>
+<img src="https://user-images.githubusercontent.com/32840403/51480656-96989400-1da2-11e9-99d4-b55546e89d54.png" width="24%"/>
+<img src="https://user-images.githubusercontent.com/32840403/51480645-95676700-1da2-11e9-842e-ff20a243013d.png" width="24%"/>
+<img src="https://user-images.githubusercontent.com/32840403/51480647-95676700-1da2-11e9-95ac-d548d3aec24c.png" width="24%"/>
+</td>
+</tr>
 
+<tr>
+<td>
+<img src="https://user-images.githubusercontent.com/32840403/51480651-95fffd80-1da2-11e9-8b37-4cebfa7358e6.png" width="24%"/>
+<img src="https://user-images.githubusercontent.com/32840403/51480652-96989400-1da2-11e9-9096-7c93de6109da.png" width="24%"/>
+</td>
+</tr>
+</table>
+
+- Testing Sequence
+<table border=1>
+<tr>
+<td>
+<img src="https://user-images.githubusercontent.com/32840403/51480646-95676700-1da2-11e9-9723-ad8e07aa4706.png" width="24%"/>
+<img src="https://user-images.githubusercontent.com/32840403/51480648-95fffd80-1da2-11e9-917e-f9e67c1f1500.png" width="24%"/>
+<img src="https://user-images.githubusercontent.com/32840403/51480650-95fffd80-1da2-11e9-8c02-96aa37beab94.png" width="24%"/>
+<img src="https://user-images.githubusercontent.com/32840403/51480654-96989400-1da2-11e9-8202-ddedae1a9a7a.png" width="24%"/>
+</td>
+</tr>
+</table>
+
+## Acknowledgments
+- Thanks [alexart13](https://github.com/alexart13) for providing the trained model and the correct code to process ground truth rotation.
 
