@@ -1,5 +1,5 @@
 # Readme
-- This is the PyTorch implementation of ICRA 2017 paper [DeepVO: Towards end-to-end visual odometry with deep Recurrent Convolutional Neural Networks](https://ieeexplore.ieee.org/document/7989236/)
+- This is an unofficial PyTorch implementation of ICRA 2017 paper [DeepVO: Towards end-to-end visual odometry with deep Recurrent Convolutional Neural Networks](https://ieeexplore.ieee.org/document/7989236/)
 - Model
     - ![](https://imgur.com/vo0vXgk.png)
 
@@ -86,3 +86,17 @@ Provided by [alexart13](https://github.com/alexart13).
 ## Acknowledgments
 - Thanks [alexart13](https://github.com/alexart13) for providing the trained model and the correct code to process ground truth rotation.
 
+## References
+- [paper](https://ieeexplore.ieee.org/document/7989236/)
+    - Sen Wang, Ronald Clark, Hongkai Wen, Niki Trigoni
+    - ICRA 2017
+      ```
+      @inproceedings{wang2017deepvo,
+	  title={Deepvo: Towards end-to-end visual odometry with deep recurrent convolutional neural networks},
+	  author={Wang, Sen and Clark, Ronald and Wen, Hongkai and Trigoni, Niki},
+	  booktitle={Robotics and Automation (ICRA), 2017 IEEE International Conference on},
+	  pages={2043--2050},
+	  year={2017},
+	  organization={IEEE}
+	  }
+      ```
