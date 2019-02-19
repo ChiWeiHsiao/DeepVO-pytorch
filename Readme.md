@@ -9,7 +9,7 @@
 		- the shell will only keep the left camera color images (image_03 folder) and delete other data
 		- the downloaded images will be placed at ```KITTI/images/00/```, ```KITTI/images/01```, ...
 		- the images offered by KITTI is already rectified
-		- the direct [download link](https://www.polybox.ethz.ch/index.php/s/90OlHg6KWBzG6gR) of pretrained model
+		- the direct [download link](https://drive.google.com/file/d/1l0s3rYWgN8bL0Fyofee8IhN-0knxJF22/view) of pretrained model
 	- Download the ground truth pose from [KITTI Visual Odometry](http://www.cvlibs.net/datasets/kitti/eval_odometry.php)
 		- you need to enter your email to request the pose data [here](http://www.cvlibs.net/download.php?file=data_odometry_poses.zip)
 		- and place the ground truth pose at ```KITTI/pose_GT/```
@@ -40,7 +40,7 @@
 ## Download trained model
 Provided by [alexart13](https://github.com/alexart13).
 - [trained model](https://drive.google.com/file/d/1l0s3rYWgN8bL0Fyofee8IhN-0knxJF22/view)
-- [optimzor](https://drive.google.com/file/d/1JlVJwEZy4W4EmgtTCNWmM4YAACUHxnr2/view)
+- [optimizer](https://drive.google.com/file/d/1JlVJwEZy4W4EmgtTCNWmM4YAACUHxnr2/view)
 
 ## Required packages
 - pytorch 0.4.0

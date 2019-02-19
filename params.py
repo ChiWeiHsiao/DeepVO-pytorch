@@ -17,8 +17,8 @@ class Parameters():
 		self.resize_mode = 'rescale'  # choice: 'crop' 'rescale' None
 		self.img_w = 608   # original size is about 1226
 		self.img_h = 184   # original size is about 370
-		self.img_means = (-0.14968217427134656, -0.12941663107068363, -0.1320610301921484)
-		self.img_stds = (1, 1, 1)  #(0.309122, 0.315710, 0.3226514)
+		self.img_means =  (0.19007764876619865, 0.15170388157131237, 0.10659445665650864)
+		self.img_stds =  (0.2610784009469139, 0.25729316928935814, 0.25163823815039915)
 		self.minus_point_5 = True
 
 		self.seq_len = (5, 7)
