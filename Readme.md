@@ -17,7 +17,7 @@
     - remove unused images based on the readme file in KITTI devkit
     - convert the ground truth poses from KITTI (12 floats [R|t]) into 6 floats (euler angle + translation)
     - and save the transformed ground truth pose into ```.npy``` file
-- Pretrained weight of FlowNet ( CNN part ) can be downloaded [here](https://drive.google.com/drive/folders/0B5EC7HMbyk3CbjFPb0RuODI3NmM)
+- Pretrained weight of FlowNet ( CNN part ) can be downloaded [here](https://drive.google.com/drive/folders/0B5EC7HMbyk3CbjFPb0RuODI3NmM?resourcekey=0-SuPU4qVZzuB4s83ngjrAEg&usp=sharing)
 	- note that this pretrained FlowNet model assumes that RGB value range is [-0.5, 0.5]
 	- the code of CNN layers is modified from [ClementPinard/FlowNetPytorch](https://github.com/ClementPinard/FlowNetPytorch)
 - Specify the paths and changes hyperparameters in ```params.py```
